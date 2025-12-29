@@ -2,3 +2,5 @@ numpy
 pandas
 dataclasses
 openpyxl
+yfinance
+certifi

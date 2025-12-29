@@ -1,0 +1,32 @@
+# Generated: 2025:12:28 00:35:21
+#
+# Start CSV parsing at the line after the "##".
+#
+##
+Holiday Name,Date,Regular Trading Hours,Global Trading Hours
+New Year's Day,2025-01-01,None,8:15 PM (Wed) to 9:25 AM (Thu)
+National Day of Mourning (NDoM) - Jimmy Carter,2025-01-09,None,8:15 PM (Wed) to 9:30 AM (Thu) and 8:15 PM (Thu) to 9:25 AM (Fri)
+Martin Luther King Jr. Day,2025-01-20,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Presidents' Day,2025-02-17,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Good Friday,2025-04-18,None,None
+Memorial Day,2025-05-26,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Juneteenth Holiday,2025-06-19,None,8:15 PM (Wed) to 11:30 AM (Thu) and 8:15 PM (Thu) to 9:25 AM (Fri)
+Independence Day Early Close,2025-07-03,09:30:00 - 13:00:00,8:15 PM (Wed) to 9:25 AM (Thu) and 8:15 PM (Thu) to 11:30 AM (Fri)
+Independence Day,2025-07-04,None,8:15 PM (Thu) to 11:30 AM (Fri)
+Labor Day,2025-09-01,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Thanksgiving Day,2025-11-27,None,8:15 PM (Wed) to 11:30 AM (Thu) and 8:15 PM (Thu) to 9:25 AM (Fri)
+Thanksgiving Early Close,2025-11-28,09:30:00 - 13:00:00,8:15 PM (Wed) to 11:30 AM (Thu) and 8:15 PM (Thu) to 9:25 AM (Fri)
+Christmas Early Close,2025-12-24,09:30:00 - 13:00:00,8:15 PM (Tue) to 9:25 AM (Wed)
+Christmas Day,2025-12-25,None,8:15 PM (Thu) to 9:25 AM (Fri)
+New Year's Day,2026-01-01,None,8:15 PM (Thu) to 9:25 AM (Fri)
+Martin Luther King Jr. Day,2026-01-19,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Presidents' Day,2026-02-16,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Good Friday,2026-04-03,None,None
+Memorial Day,2026-05-25,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Juneteenth Holiday,2026-06-19,None,8:15 PM (Thu) to 11:30 AM (Fri)
+Independence Day Observed,2026-07-03,None,8:15 PM (Thu) to 11:30 AM (Fri)
+Labor Day,2026-09-07,None,8:15 PM (Sun) to 11:30 AM (Mon) and 8:15 PM (Mon) to 9:25 AM (Tue)
+Thanksgiving Day,2026-11-26,None,8:15 PM (Wed) to 11:30 AM (Thu) and 8:15 PM (Thu) to 9:25 AM (Fri)
+Thanksgiving Early Close,2026-11-27,09:30:00 - 13:00:00,8:15 PM (Wed) to 11:30 AM (Thu) and 8:15 PM (Thu) to 9:25 AM (Fri)
+Christmas Early Close,2026-12-24,09:30:00 - 13:00:00,8:15 PM (Wed) to 9:25 AM (Thu)
+Christmas Day,2026-12-25,None,None
