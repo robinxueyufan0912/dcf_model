@@ -1,5 +1,8 @@
+import contextlib
 import datetime as dt
+import re
 import ssl
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -303,6 +306,15 @@ def add_volume_metrics_rows_incl_today_strict(
         .rolling(window=10, min_periods=10)
         .apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
     )
+
+    cond_0 = out["volume_pct"]>=90
+    cond_1 = out["volume_pct_ge90_count_last_5"] >= 3 
+    cond_2 = out["volume_pct_ge90_count_last_10"] >= 3
+    cond_3 = out["volume_pct_ge90_count_last_5"] >= 2
+    cond_4 = out["volume_pct_ge90_count_last_10"] >= 2
+    # out["SELL"] = cond_0 & ((cond_1| cond_2) | ( cond_3 & cond_4))
+    out["SELL"] = cond_0 & (cond_1| cond_2)
+    
     out = out.reset_index(drop=True)
     return out
 
@@ -519,9 +531,160 @@ def event_study_spx_drawdown(
     summary = pd.DataFrame(summary_rows)
     return per_event, summary
 
+import subprocess
 
-# 示例
-if __name__ == "__main__":
+def imessage(to, message):
+    safe_message = message.replace("\\", "\\\\").replace('"', '\\"')
+    script = f'''
+    tell application "Messages"
+        set targetService to 1st service whose service type is iMessage
+        set targetBuddy to buddy "{to}" of targetService
+        send "{safe_message}" to targetBuddy
+    end tell
+    '''
+    subprocess.run(["osascript", "-e", script], check=False)
+
+def imessage_file(to, file_path: str) -> None:
+    safe_path = file_path.replace("\\", "\\\\").replace('"', '\\"')
+    script = f'''
+    tell application "Messages"
+        activate
+        set targetService to 1st service whose service type is iMessage
+        set targetBuddy to buddy "{to}" of targetService
+        set theFile to POSIX file "{safe_path}" as alias
+        try
+            set targetChat to 1st chat whose participants contains targetBuddy
+            send theFile to targetChat
+        on error
+            send theFile to targetBuddy
+        end try
+    end tell
+    '''
+    subprocess.run(["osascript", "-e", script], check=False)
+
+def _df_to_pipe_table(df: pd.DataFrame) -> str:
+    # preferred_cols = ["Date", "%", "%90_L5", "%90_L10", "SELL"]
+    # if all(col in df.columns for col in preferred_cols):
+    #     df = df.loc[:, preferred_cols]
+    cols = list(df.columns)
+    rows = df.values.tolist()
+    str_rows = [
+        ["" if pd.isna(val) else str(val) for val in row]
+        for row in rows
+    ]
+
+    widths = []
+    for i, col in enumerate(cols):
+        max_len = len(str(col))
+        for row in str_rows:
+            if len(row[i]) > max_len:
+                max_len = len(row[i])
+        widths.append(max_len)
+
+    def _fmt_row(row_vals):
+        return "| " + " | ".join(
+            row_vals[i].ljust(widths[i]) for i in range(len(cols))
+        ) + " |"
+
+    header = _fmt_row([str(c) for c in cols])
+    sep = "| " + " | ".join("-" * widths[i] for i in range(len(cols))) + " |"
+    body = "\n".join(_fmt_row(r) for r in str_rows)
+    return "\n".join([header, sep, body]) if body else "\n".join([header, sep])
+
+
+def _vx_table_for_imessage(
+    df: pd.DataFrame, max_rows: int = 10
+) -> str:
+    cols = [
+        "Trade Date",
+        "Futures",
+        "Close",
+        "Change",
+        "Total Volume",
+        "Volume/MA50",
+        "volume_pct",
+        "volume_pct_ge90_count_last_5",
+        "volume_pct_ge90_count_last_10",
+        "SELL",
+    ]
+    view = df.loc[:, cols].tail(max_rows).copy()
+    view = view.rename(
+        columns={
+            "Trade Date": "Date",
+            "Futures": "Fut",
+            "Close": "Clo",
+            "Change": "Chg",
+            "Total Volume": "Vol",
+            "Volume/MA50": "/m50",
+            "volume_pct": "%",
+            "volume_pct_ge90_count_last_5": "90%L5",
+            "volume_pct_ge90_count_last_10": "90%L10",
+        }
+    )
+
+    def _fmt_float_trim(val) -> str:
+        if pd.isna(val):
+            return ""
+        return f"{val:.2f}".rstrip("0").rstrip(".")
+
+    def _fmt_int(val) -> str:
+        return "" if pd.isna(val) else f"{int(val):,}"
+
+    def _fmt_date(val) -> str:
+        if pd.isna(val):
+            return ""
+        dt_val = pd.to_datetime(val, errors="coerce")
+        if pd.isna(dt_val):
+            return str(val)
+        return dt_val.strftime("%m-%d")
+
+    def _fmt_fut(val) -> str:
+        if pd.isna(val):
+            return ""
+        text = str(val).strip()
+        match = re.match(r"^([A-Za-z]+)\s*\(([^)]+)\)$", text)
+        if not match:
+            return text.replace("(", "").replace(")", "")
+        code = match.group(1).strip()
+        inside = match.group(2).strip()
+        parts = inside.split()
+        if len(parts) < 2 or not parts[-1].isdigit():
+            return text.replace("(", "").replace(")", "")
+        month = parts[0][:3].title()
+        year = int(parts[-1])
+        return f"{month}/{year % 100:02d}"
+
+    def _fmt_float_1(val) -> str:
+        if pd.isna(val):
+            return ""
+        return f"{val:.1f}"
+
+    def _fmt_vol_k(val) -> str:
+        if pd.isna(val):
+            return ""
+        try:
+            num = int(float(val))
+        except (TypeError, ValueError):
+            return str(val)
+        if abs(num) < 1000:
+            return f"{num}"
+        return f"{num // 1000}k"
+
+    view["Date"] = view["Date"].map(_fmt_date)
+    view["Fut"] = view["Fut"].map(_fmt_fut)
+    view["Clo"] = view["Clo"].map(_fmt_float_1)
+    view["Chg"] = view["Chg"].map(_fmt_float_trim)
+    view["/m50"] = view["/m50"].map(_fmt_float_trim)
+    view["%"] = view["%"].map(_fmt_float_trim)
+    view["Vol"] = view["Vol"].map(_fmt_vol_k)
+    view["90%L5"] = view["90%L5"].map(_fmt_int)
+    view["90%L10"] = view["90%L10"].map(_fmt_int)
+    view["SELL"] = view["SELL"].map(lambda x: "Y" if bool(x) else "N")
+
+    return _df_to_pipe_table(view)
+
+
+def run_vx_eod_report(end_date: dt.date) -> None:
     HOLIDAYS_2023 = [
         "2023-01-02",  # New Year's Day (observed)
         "2023-01-16",  # Martin Luther King, Jr. Day
@@ -582,8 +745,8 @@ if __name__ == "__main__":
     for r in table:
         print(r)
 
+    # ===== find the current VXCurrent contract month for each trading day [start_date, end_date] =====
     start_date = dt.date(2021, 1, 1)
-    end_date = dt.date.today()
 
     m = vxcurrent_map(start_date, end_date, holidays, business_days_only=True)
 
@@ -592,6 +755,7 @@ if __name__ == "__main__":
     for k in sorted(m.keys())[-10:]:
         print(k, "->", m[k])
 
+    # ===== download the latest VX futures HLOCV data =====
     cboe_vx_futures_hlocv_data = {
         "CFE_VX_F6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-01-21.csv",
         "CFE_VX_G6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-02-18.csv",
@@ -605,40 +769,49 @@ if __name__ == "__main__":
     }
     download_cboe_vx_csvs(cboe_vx_futures_hlocv_data)
 
+    # ===== Create Dataframe, for each trading day, the VXCurrent and its HLOCV, plus features =====
     data_dir = Path(__file__).resolve().parent / "data"
     all_data = load_vx_csvs(data_dir)
     df_vxcurrent_hlocv = rows_for_vxcurrent_map(m, all_data, strict=False)
-    print("/vxcurrent_hlocv:")
-    print(df_vxcurrent_hlocv.tail(10))
-    df_vxcurrent_hlocv.to_csv("vix_hlocv.csv")
+    # print("/vxcurrent hlocv:")
+    # print(df_vxcurrent_hlocv.tail(10))
+    # df_vxcurrent_hlocv.to_csv("vxcurrent_hlocv.csv")
 
-    df_vxcurrent_vol_pct = add_volume_metrics_rows_incl_today_strict(
+    # ===== Derive features to predict draw down =====
+    df_vxcurrent_hlocv_features = add_volume_metrics_rows_incl_today_strict(
         df_vxcurrent_hlocv, lookback_rows=300, ma_window=50
     )
-    print("/vxcurrent_hlocv_volma50_volpct:")
-    print(df_vxcurrent_vol_pct.tail(10))
-    df_vxcurrent_vol_pct.to_csv("vix_vol_pct.csv")
-
-    sell_signal_by_vxcurrent = df_vxcurrent_vol_pct["volume_pct"] >= 90.0
-    data_filter = ("2024-01-01" < df_vxcurrent_vol_pct["Trade Date"]) & (
-        df_vxcurrent_vol_pct["Trade Date"] < "2025-01-01"
+    df_vxcurrent_hlocv_features.to_csv(
+        f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv"
     )
-    df_vx_sell_signal = df_vxcurrent_vol_pct[sell_signal_by_vxcurrent & data_filter]
-    print("/vxcurrent sell signal:")
-    print(df_vx_sell_signal)
-    df_vx_sell_signal.to_csv("vix_vol_pct_90.csv")
+
+    # ===== VXCurrent draw down (sell) signal =====
+    date_filter = "2023-01-01" < df_vxcurrent_hlocv_features["Trade Date"]
+    # data_filter &= df_vxcurrent_vol_pct["Trade Date"] < "2025-01-01"
+
+    df_vx_days_trigger_sell_signal = df_vxcurrent_hlocv_features[
+        df_vxcurrent_hlocv_features["SELL"] & date_filter
+    ]
+    print(
+        "/vxcurrent sell signal, 1) volume_pct>90, 2) count(last5daysVolPct>90)>=3 or count(last10daysVolPct>90)>=3:"
+    )
+    print(df_vx_days_trigger_sell_signal)
+    df_vx_days_trigger_sell_signal.to_csv(
+        f"vix_sell_signal/{end_date}_vxcurrent_days_trigger_sell_signal.csv"
+    )
 
     # ===== SPX event study =====
+    # when drawdown (sell) signal occurs, what's the max drawdown in next (1, 5, 10, 15, 20, 25, 30) days
     spx_ohlc = load_spx_ohlc_stooq(
         cache_path="spx_stooq.csv", refresh=True, verify_ssl=False
     )
 
-    horizons = (1, 5, 10, 15, 20)
+    horizons = (1, 5, 10, 15, 20, 25, 30)
     spx_metrics = compute_spx_forward_metrics(spx_ohlc, horizons=horizons)
 
-    # 触发日事件研究：t+1/t+5/t+10 的 forward ret + max drawdown
+    # 触发日事件研究：t+(1, 5, 10, 15, 20, 25, 30) 的 forward ret + max drawdown
     per_event, summary = event_study_spx_drawdown(
-        df_vx_sell_signal,
+        df_vx_days_trigger_sell_signal,
         spx_metrics,
         date_col="Trade Date",
         horizons=horizons,
@@ -651,8 +824,49 @@ if __name__ == "__main__":
     select_col = ["signal_date"] + select_col
     print(per_event[select_col])
 
-    print("\n/SPX summary:")
-    print(summary)
+    # print("\n/SPX summary:")
+    # print(summary)
 
-    per_event.to_csv("spx_eventstudy_per_signal.csv", index=False)
-    summary.to_csv("spx_eventstudy_summary.csv", index=False)
+    # per_event.to_csv("spx_eventstudy_per_signal.csv", index=False)
+    # summary.to_csv("spx_eventstudy_summary.csv", index=False)
+
+    print("/vxcurrent this month:")
+    print(df_vxcurrent_hlocv_features.tail(10))
+    print(
+        f"Today is {end_date}, vxcurrent sell signal: \n"
+        "- today's volume_pct>=90\n"
+        "- volume_pct_ge90_count_last_5>=3 or volume_pct_ge90_count_last_10>=3"
+    )
+
+    vx_table = _vx_table_for_imessage(df_vxcurrent_hlocv_features, max_rows=10)
+    imessage_txt = f"{vx_table}\nToday is {end_date}"
+    print("/imessage:")
+    print(imessage_txt)
+    imessage(to="+14155187720", message=imessage_txt)
+    
+
+# 示例
+if __name__ == "__main__":
+    end_date = dt.date.today()
+    report_dir = Path(__file__).resolve().parent / "vix_sell_signal"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_path = report_dir / f"{end_date}_vx_eod_report.txt"
+
+    class _Tee:
+        def __init__(self, *files):
+            self._files = files
+
+        def write(self, data: str) -> None:
+            for file in self._files:
+                file.write(data)
+
+        def flush(self) -> None:
+            for file in self._files:
+                file.flush()
+
+    with report_path.open("w", encoding="utf-8") as report_file, contextlib.redirect_stdout(
+        _Tee(sys.stdout, report_file)
+    ):
+        run_vx_eod_report(end_date)
+
+    # imessage_file(to="robin-xue@qq.com", file_path=str(report_path))

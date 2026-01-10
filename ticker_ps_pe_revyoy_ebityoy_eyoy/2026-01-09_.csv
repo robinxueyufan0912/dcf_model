@@ -1,0 +1,269 @@
+sector,ticker,date,TTM P/E (GAAP),TTM P/S (GAAP)
+TMT - mag7,AAPL,2026-01-09,34.77,9.21
+TMT - mag7,MSFT,2026-01-09,34.10,12.12
+TMT - mag7,GOOG,2026-01-09,32.47,10.29
+TMT - mag7,AMZN,2026-01-09,34.95,3.83
+TMT - mag7,META,2026-01-09,28.86,8.69
+TMT - mag7,TSLA,2026-01-09,297.35,15.48
+TMT - e-commerce,UI,2026-01-09,42.81,12.29
+TMT - e-commerce,SE,2026-01-09,57.10,3.47
+TMT - e-commerce,CPNG,2026-01-09,107.62,1.23
+TMT - consumer discretionary,UBER,2026-01-09,10.96,3.58
+TMT - consumer discretionary,DASH,2026-01-09,109.36,7.35
+TMT - consumer discretionary,CART,2026-01-09,22.61,2.98
+TMT - consumer discretionary,SHOP,2026-01-09,120.45,20.02
+TMT - consumer discretionary,EBAY,2026-01-09,19.78,3.81
+TMT - consumer discretionary,ETSY,2026-01-09,43.26,2.14
+TMT - consumer discretionary,NFLX,2026-01-09,37.37,9.43
+TMT - consumer discretionary,DIS,2026-01-09,16.91,2.20
+TMT - consumer discretionary,SPOT,2026-01-09,84.16,5.94
+TMT - consumer discretionary,RBLX,2026-01-09,NA,11.52
+TMT - consumer discretionary,RDDT,2026-01-09,134.70,24.33
+TMT - consumer discretionary,PINS,2026-01-09,9.40,4.52
+TMT - consumer discretionary,SNAP,2026-01-09,NA,2.45
+TMT - consumer discretionary,MTCH,2026-01-09,15.00,2.19
+TMT - consumer discretionary,APP,2026-01-09,81.63,39.65
+TMT - consumer discretionary,TTD,2026-01-09,42.54,6.46
+TMT - consumer discretionary,ROKU,2026-01-09,NA,3.62
+TMT - consumer discretionary,U,2026-01-09,NA,10.60
+TMT - consumer discretionary,DUOL,2026-01-09,22.46,8.45
+TMT - consumer discretionary,COUR,2026-01-09,NA,1.65
+TMT - consumer discretionary,RKT,2026-01-09,293.32,12.03
+TMT - consumer discretionary,Z,2026-01-09,NA,6.67
+TMT - consumer discretionary,IOT,2026-01-09,NA,12.78
+TMT - cybersecurity,PANW,2026-01-09,119.89,13.79
+TMT - cybersecurity,CRWD,2026-01-09,NA,25.99
+TMT - cybersecurity,FTNT,2026-01-09,32.62,8.99
+TMT - cybersecurity,ZS,2026-01-09,NA,12.20
+TMT - cybersecurity,NET,2026-01-09,NA,31.80
+TMT - cybersecurity,CYBR,2026-01-09,NA,17.70
+TMT - cybersecurity,OKTA,2026-01-09,84.68,5.76
+TMT - cybersecurity,RBRK,2026-01-09,NA,11.80
+TMT - cybersecurity,CVLT,2026-01-09,69.95,5.00
+TMT - cybersecurity,NTNX,2026-01-09,71.45,5.53
+TMT - cybersecurity,SNOW,2026-01-09,NA,17.09
+TMT - cybersecurity,MDB,2026-01-09,NA,14.34
+TMT - cybersecurity,DDOG,2026-01-09,425.10,13.70
+TMT - cybersecurity,DT,2026-01-09,25.36,6.88
+TMT - devops,GTLB,2026-01-09,NA,6.58
+TMT - devops,FROG,2026-01-09,NA,13.95
+TMT - devops,DBX,2026-01-09,15.46,2.70
+TPU,WULF,2026-01-09,NA,32.73
+TPU,CIFT,2026-01-09,NA,NA
+TPU,GOOG,2026-01-09,32.47,10.29
+TPU,AVGO,2026-01-09,72.46,25.60
+TPU,TSM,2026-01-09,33.17,14.50
+TPU,TTMI,2026-01-09,58.88,2.74
+TPU,FLEX,2026-01-09,27.14,0.86
+TPU,CLS,2026-01-09,49.06,3.08
+TPU,MRVL,2026-01-09,29.14,9.06
+TPU,APH,2026-01-09,46.72,8.18
+TPU,LITE,2026-01-09,234.92,13.53
+TPU,ADI,2026-01-09,65.86,13.37
+TPU,FN,2026-01-09,46.10,4.46
+TPU,VICR,2026-01-09,77.96,16.02
+data center,NOK,2026-01-09,37.03,1.66
+data center - hyper scaler,ORCL,2026-01-09,37.31,9.35
+data center - hyper scaler,CRWV,2026-01-09,NA,9.27
+data center - hyper scaler,NBIS,2026-01-09,NA,71.60
+data center - hyper scaler,IREN,2026-01-09,23.47,22.00
+data center - hyper scaler,CIFR,2026-01-09,NA,31.83
+data center - semi,NVDA,2026-01-09,45.79,24.00
+data center - semi,MU,2026-01-09,32.80,9.18
+data center - semi,AVGO,2026-01-09,72.46,25.60
+data center - semi,AMD,2026-01-09,100.41,10.33
+data center - package,TSM,2026-01-09,33.17,14.50
+data center - package,ASX,2026-01-09,35.12,1.92
+data center - package,AMKR,2026-01-09,42.14,2.00
+data center - test,TER,2026-01-09,79.07,11.90
+data center - router,ANET,2026-01-09,46.77,18.32
+data center - router,MRVL,2026-01-09,29.14,9.06
+data center - optics,CRDO,2026-01-09,131.30,34.13
+data center - optics,MTSI,2026-01-09,NA,13.55
+data center - optics,SMTC,2026-01-09,255.72,7.01
+data center - optics,COHR,2026-01-09,256.61,4.63
+data center - optics,CIEN,2026-01-09,271.44,6.81
+data center - optics,CSCO,2026-01-09,27.86,5.06
+data center - optics,GLW,2026-01-09,54.05,4.90
+data center - NAND/SSD,STX,2026-01-09,39.02,6.79
+data center - NAND/SSD,WDC,2026-01-09,29.23,5.71
+data center - NAND/SSD,SNDK,2026-01-09,NA,7.11
+data center - semi equip,ASML,2026-01-09,47.70,13.89
+data center - semi equip,LRCX,2026-01-09,48.12,14.00
+data center - semi equip,KLAC,2026-01-09,43.95,14.69
+data center - server,DELL,2026-01-09,16.09,0.77
+data center - server,SMCI,2026-01-09,24.17,0.86
+data center - PDU,MPWR,2026-01-09,24.49,17.26
+data center - PDU,NVT,2026-01-09,29.03,4.75
+data center - PDU,VRT,2026-01-09,61.66,6.45
+data center - PDU,ETN,2026-01-09,32.45,4.73
+data center - onsite power generator,CAT,2026-01-09,31.69,4.47
+data center - onsite power generator,CMI,2026-01-09,28.66,2.27
+data center - onsite power generator,BE,2026-01-09,NA,17.43
+data center - construction builder,EME,2026-01-09,25.99,1.78
+data center - construction builder,FIX,2026-01-09,42.79,4.28
+data center - medium volt transformer,POWL,2026-01-09,24.61,4.02
+data center - medium volt transformer,GEV,2026-01-09,100.88,4.48
+data center - medium volt transformer,PWR,2026-01-09,62.69,2.32
+data center - new IPP,TLN,2026-01-09,80.56,4.18
+data center - new IPP,BWXT,2026-01-09,60.25,6.02
+data center - new IPP,OKLO,2026-01-09,NA,NA
+data center - new IPP,SMR,2026-01-09,NA,97.17
+data center - IPP,CEG,2026-01-09,39.22,3.99
+data center - IPP,VST,2026-01-09,59.43,2.56
+data center - IPP,NRG,2026-01-09,21.81,0.96
+data center - uranium,URI,2026-01-09,24.15,3.74
+data center - uranium,CCJ,2026-01-09,124.16,18.91
+data center - uranium,UEC,2026-01-09,NA,143.41
+data center - uranium,LEU,2026-01-09,46.54,12.28
+data center - HVAC,TT,2026-01-09,29.38,4.02
+data center - HVAC,CARR,2026-01-09,22.57,2.15
+data center - HVAC,JCI,2026-01-09,21.77,2.87
+data center - HVAC,SPXC,2026-01-09,44.27,4.78
+chips,QCOM,2026-01-09,36.35,4.30
+chips,INTC,2026-01-09,4297.17,4.25
+chips,ARM,2026-01-09,143.56,26.88
+robotic,PH,2026-01-09,32.80,5.80
+robotic,ALNT,2026-01-09,52.87,1.88
+robotic,ROK,2026-01-09,53.60,5.53
+robotic,SNPS,2026-01-09,65.46,14.25
+robotic,SYM,2026-01-09,NA,18.90
+robotic,ATI,2026-01-09,39.44,3.63
+rare earth,MP,2026-01-09,NA,47.21
+rare earth,CRML,2026-01-09,NA,NA
+rare earth,UCU,2026-01-09,NA,NA
+material,AA,2026-01-09,14.46,1.26
+material,ALB,2026-01-09,NA,3.84
+material,LAC,2026-01-09,NA,NA
+material,FLNC,2026-01-09,NA,1.87
+quatum,IBM,2026-01-09,36.39,4.35
+quatum,IONQ,2026-01-09,NA,219.43
+quatum,RGTI,2026-01-09,NA,1089.22
+TMT - SAAS,ORCL,2026-01-09,37.31,9.35
+TMT - SAAS,SAP,2026-01-09,37.01,6.98
+TMT - SAAS,CRM,2026-01-09,34.68,6.04
+TMT - SAAS,NOW,2026-01-09,85.74,11.62
+TMT - SAAS,ADBE,2026-01-09,19.99,5.88
+TMT - SAAS,INTU,2026-01-09,44.30,9.26
+TMT - SAAS,ADP,2026-01-09,26.24,5.15
+TMT - SAAS,WDAY,2026-01-09,86.99,5.92
+TMT - SAAS,ADSK,2026-01-09,53.58,8.52
+TMT - SAAS,TEAM,2026-01-09,NA,7.08
+TMT - SAAS,HUBS,2026-01-09,NA,6.51
+TMT - SAAS,TWLO,2026-01-09,315.16,4.07
+TMT - SAAS,ZM,2026-01-09,16.55,5.25
+TMT - SAAS,DOCU,2026-01-09,48.16,4.36
+TMT - SAAS,BILL,2026-01-09,NA,3.64
+TMT - SAAS,GDDY,2026-01-09,19.56,3.15
+TMT - SAAS,WIX,2026-01-09,41.53,2.73
+TMT - SAAS,PATH,2026-01-09,38.49,5.62
+Fin - bank,JPM,2026-01-09,16.31,3.23
+Fin - bank,BAC,2026-01-09,15.22,2.08
+Fin - bank,C,2026-01-09,17.06,1.28
+Fin - bank,BK,2026-01-09,17.18,2.05
+Fin - bank,MS,2026-01-09,19.12,2.62
+Fin - bank,GS,2026-01-09,19.07,2.22
+Fin - credit,AXP,2026-01-09,25.22,3.29
+Fin - credit,COF,2026-01-09,105.69,2.52
+Fin - credit,AFRM,2026-01-09,119.31,8.44
+Fin - credit,KLAR,2026-01-09,NA,6.91
+Fin - credit,SOFI,2026-01-09,49.68,7.77
+Fin - credit,UPST,2026-01-09,215.63,4.94
+Fin - credit,FICO,2026-01-09,62.74,19.83
+Fin - payment,V,2026-01-09,34.62,16.72
+Fin - payment,MA,2026-01-09,36.81,16.41
+Fin - payment,FISV,2026-01-09,10.80,1.78
+Fin - payment,PYPL,2026-01-09,11.57,1.64
+Fin - payment,XYZ,2026-01-09,13.99,1.76
+Fin - payment,TOST,2026-01-09,81.33,3.56
+Fin - broker,SCHW,2026-01-09,23.50,6.55
+Fin - broker,IBKR,2026-01-09,33.95,3.10
+Fin - broker,HOOD,2026-01-09,47.85,24.53
+Fin - broker,COIN,2026-01-09,20.84,7.43
+aerospace & defense,PLTR,2026-01-09,415.08,108.58
+aerospace & defense,KTOS,2026-01-09,925.90,14.94
+aerospace & defense,AVAV,2026-01-09,NA,13.30
+aerospace & defense,ONDS,2026-01-09,NA,210.61
+aerospace & defense,RTX,2026-01-09,38.71,2.94
+aerospace & defense,LMT,2026-01-09,30.31,1.71
+aerospace & defense,NOC,2026-01-09,22.21,2.16
+aerospace & defense,GD,2026-01-09,22.93,1.86
+aerospace & defense,HII,2026-01-09,26.73,1.26
+aerospace & defense,CW,2026-01-09,49.29,6.61
+aerospace & defense,BWXT,2026-01-09,60.25,6.02
+aerospace & defense,LDOS,2026-01-09,18.50,1.46
+aerospace & defense,BAH,2026-01-09,14.69,1.00
+aerospace & defense,CACI,2026-01-09,26.45,1.49
+aerospace aftermarket,BA,2026-01-09,NA,2.27
+aerospace aftermarket,GE,2026-01-09,42.88,7.72
+aerospace aftermarket,HWM,2026-01-09,61.26,11.00
+aerospace aftermarket,TDG,2026-01-09,43.38,8.87
+aerospace aftermarket,HEI,2026-01-09,72.10,9.48
+aerospace aftermarket,CRS,2026-01-09,40.20,5.66
+aerospace aftermarket,FTAI,2026-01-09,56.20,10.72
+police equipment,MSI,2026-01-09,30.75,5.64
+police equipment,AXON,2026-01-09,199.97,19.49
+auto manufactueres,TSLA,2026-01-09,297.35,15.48
+auto manufactueres,RACE,2026-01-09,37.99,8.55
+auto manufactueres,GM,2026-01-09,16.66,0.41
+auto manufactueres,F,2026-01-09,12.18,0.30
+auto manufactueres,CRPT,2026-01-09,NA,NA
+residential construction,DHI,2026-01-09,13.56,1.34
+residential construction,TOL,2026-01-09,10.72,1.26
+residential construction,KBH,2026-01-09,10.01,0.64
+residential construction,BLD,2026-01-09,23.65,2.50
+residential construction,IBP,2026-01-09,31.91,2.70
+home improvement retial,HD,2026-01-09,25.54,2.24
+home improvement retial,LOW,2026-01-09,22.15,1.78
+home improvement retial,BLDR,2026-01-09,23.72,0.88
+home improvement retial,W,2026-01-09,NA,1.23
+home improvement retial,WSM,2026-01-09,21.88,3.00
+loging,MAR,2026-01-09,34.66,3.40
+loging,HLT,2026-01-09,43.53,5.95
+loging,H,2026-01-09,NA,2.30
+airline,DAL,2026-01-09,10.19,0.75
+airline,UAL,2026-01-09,11.75,0.65
+airline,LUV,2026-01-09,67.85,0.84
+airline,AAL,2026-01-09,19.22,0.19
+resort & casinos,LVS,2026-01-09,26.60,3.25
+resort & casinos,WYNN,2026-01-09,25.99,1.72
+resort & casinos,MGM,2026-01-09,216.26,0.55
+resort & casinos,CZR,2026-01-09,NA,0.44
+travel service,BKNG,2026-01-09,35.70,6.80
+travel service,ABNB,2026-01-09,32.95,7.15
+travel service,RCL,2026-01-09,21.04,4.87
+travel service,EXPE,2026-01-09,28.35,2.53
+travel service,MMYR,2026-01-09,NA,NA
+travel service,YOU,2026-01-09,19.12,5.60
+gambling,FLUT,2026-01-09,NA,2.44
+gambling,DKNG,2026-01-09,NA,5.74
+restaurants,MCD,2026-01-09,26.21,8.33
+restaurants,SBUX,2026-01-09,54.55,2.72
+restaurants,CMG,2026-01-09,35.35,4.50
+restaurants,DRI,2026-01-09,21.21,1.85
+restaurants,DPZ,2026-01-09,23.67,2.82
+restaurants,TXRH,2026-01-09,27.97,2.08
+restaurants,WING,2026-01-09,44.73,11.15
+restaurants,CAVA,2026-01-09,61.08,7.26
+restaurants,SG,2026-01-09,NA,1.35
+telecom service,TMUS,2026-01-09,19.28,2.61
+telecom service,VZ,2026-01-09,8.62,1.24
+telecom service,T,2026-01-09,7.79,1.37
+telecom service,CMCSA,2026-01-09,4.71,0.84
+telecom service,ERIC,2026-01-09,12.60,1.21
+discount stores,WMT,2026-01-09,40.17,1.30
+discount stores,COST,2026-01-09,49.54,1.46
+discount stores,TGT,2026-01-09,12.80,0.45
+discount stores,SFM,2026-01-09,14.95,0.87
+household & personal products,PG,2026-01-09,20.71,3.90
+household & personal products,PM,2026-01-09,29.45,6.35
+household & personal products,UL,2026-01-09,23.43,2.15
+household & personal products,CL,2026-01-09,22.83,3.27
+household & personal products,KMB,2026-01-09,16.59,1.80
+household & personal products,KVUE,2026-01-09,22.62,2.15
+household & personal products,ULTA,2026-01-09,25.53,2.47
+household & personal products,ELF,2026-01-09,61.68,3.75
+household & personal products,HIMS,2026-01-09,58.59,3.26
+utilities - regulated electric,NEE,2026-01-09,25.37,6.46
+utilities - regulated electric,SO,2026-01-09,21.63,3.31
+utilities - regulated electric,HE,2026-01-09,19.46,0.83
