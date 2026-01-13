@@ -1,0 +1,33 @@
+sector,ticker,date,TTM P/E (GAAP),TTM P/S (GAAP)
+TMT - mag7,AAPL,2026-01-10,34.77,9.20
+TMT - mag7,MSFT,2026-01-10,34.10,12.09
+TMT - mag7,GOOG,2026-01-10,32.47,10.29
+TMT - mag7,AMZN,2026-01-10,34.95,3.81
+TMT - mag7,META,2026-01-10,28.86,8.69
+TMT - mag7,TSLA,2026-01-10,297.35,15.16
+TMT - e-commerce,UI,2026-01-10,42.81,12.05
+TMT - e-commerce,SE,2026-01-10,57.10,3.47
+TMT - e-commerce,CPNG,2026-01-10,107.62,1.22
+TMT - consumer discretionary,UBER,2026-01-10,10.96,3.67
+TMT - consumer discretionary,DASH,2026-01-10,109.36,7.64
+TMT - consumer discretionary,CART,2026-01-10,22.61,3.11
+TMT - consumer discretionary,SHOP,2026-01-10,120.45,20.02
+TMT - consumer discretionary,EBAY,2026-01-10,19.78,3.81
+TMT - consumer discretionary,ETSY,2026-01-10,43.26,2.12
+TMT - consumer discretionary,NFLX,2026-01-10,37.37,9.55
+TMT - consumer discretionary,DIS,2026-01-10,16.91,2.20
+TMT - consumer discretionary,SPOT,2026-01-10,84.16,6.10
+TMT - consumer discretionary,RBLX,2026-01-10,NA,11.62
+TMT - consumer discretionary,RDDT,2026-01-10,134.70,25.27
+TMT - consumer discretionary,PINS,2026-01-10,9.40,4.46
+TMT - consumer discretionary,SNAP,2026-01-10,NA,2.50
+TMT - consumer discretionary,MTCH,2026-01-10,15.00,2.19
+TMT - consumer discretionary,APP,2026-01-10,81.63,37.74
+TMT - consumer discretionary,TTD,2026-01-10,42.54,6.46
+TMT - consumer discretionary,ROKU,2026-01-10,NA,3.54
+TMT - consumer discretionary,U,2026-01-10,NA,10.74
+TMT - consumer discretionary,DUOL,2026-01-10,22.46,8.32
+TMT - consumer discretionary,COUR,2026-01-10,NA,1.66
+TMT - consumer discretionary,RKT,2026-01-10,293.32,10.97
+TMT - consumer discretionary,Z,2026-01-10,NA,6.67
+TMT - consumer discretionary,IOT,2026-01-10,NA,12.83

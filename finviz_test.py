@@ -74,6 +74,14 @@ df_is_q = add_qoq_row(df_is_q, "Net Income Before Taxes", "EBIT qoq", insert_aft
 df_is_q = add_qoq_row(df_is_q, "Net Income", "Net Income qoq", insert_after="Net Income yoy")
 df_is_q = add_qoq_row(df_is_q, "EBITDA", "EBITDA qoq", insert_after="EBITDA yoy")
 print(df_is_q)
+print(df_is_q.at['rev yoy%', 0])
+print(df_is_q.at['EBIT yoy', 0])
+print(df_is_q.at['Net Income yoy', 0])
+print(df_is_q.at['EBITDA yoy', 0])
+print(df_is_q.at['rev qoq%', 0])
+print(df_is_q.at['EBIT qoq', 0])
+print(df_is_q.at['Net Income qoq', 0])
+print(df_is_q.at['EBITDA qoq', 0])
 
 # 你也可以抓：Balance Sheet / Cash Flow
 df_bs_q = s.get_statements("AAPL", statement="B", timeframe="Q")

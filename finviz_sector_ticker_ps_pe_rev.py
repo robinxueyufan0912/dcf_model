@@ -11,6 +11,12 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
+pd.set_option("display.max_rows", None)
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", None)
+
+from finvizfinance.quote import Statements, finvizfinance
+
 sector_to_tickers = {
     "TMT - mag7": ["AAPL", "MSFT", "GOOG", "AMZN", "META", "TSLA"],
     "TMT - e-commerce": ["UI", "SE", "CPNG"],
@@ -26,7 +32,7 @@ sector_to_tickers = {
         "SNOW", "MDB", "DDOG", "DT", 
         ],
     "TMT - devops": ["GTLB", "FROG", "DBX",],
-    "TPU": ["WULF", "CIFT", "GOOG", "AVGO", "TSM", "TTMI", "FLEX", "CLS", "MRVL", "APH", "LITE", "ADI", "FN", "VICR"],
+    "TPU": ["WULF", "CIFR", "GOOG", "AVGO", "TSM", "TTMI", "FLEX", "CLS", "MRVL", "APH", "LITE", "ADI", "FN", "VICR"],
     "data center": ["NOK", ],
     "data center - hyper scaler": ["ORCL", "CRWV", "NBIS", "IREN", "CIFR", ],
     "data center - semi": ["NVDA", "MU", "AVGO", "AMD"],
@@ -47,7 +53,7 @@ sector_to_tickers = {
     "data center - HVAC":[ "TT", "CARR", "JCI", "SPXC"],
     "chips": ["QCOM", "INTC", "ARM"],
     "robotic": ["PH", "ALNT", "ROK", "SNPS", "SYM", "ATI"],
-    "rare earth": ["MP", "CRML", "UCU"],
+    "rare earth": ["MP", "CRML"],
     "material": ["AA", "ALB", "LAC", "FLNC"],
     "quatum": ["IBM", "IONQ", "RGTI"],
     "TMT - SAAS" : ["ORCL", "SAP", "CRM", "NOW", "ADBE", "INTU", "ADP", "WDAY", "ADSK", "TEAM", "HUBS", "TWLO", "ZM", "DOCU", "BILL", "GDDY", "WIX", "PATH"],
@@ -58,19 +64,41 @@ sector_to_tickers = {
     "aerospace & defense":["PLTR", "KTOS", "AVAV", "ONDS", "RTX", "LMT", "NOC", "GD", "HII", "CW", "BWXT", "LDOS", "BAH", "CACI"],
     "aerospace aftermarket": ["BA", "GE", "HWM", "TDG", "HEI", "CRS", "FTAI"],
     "police equipment": ["MSI", "AXON"],
-    "auto manufactueres" :["TSLA", "RACE", "GM", "F", "CRPT"],
+    "auto manufactueres" :["TSLA", "RACE", "GM", "F", "CPRT"],
     "residential construction": ["DHI", "TOL", "KBH", "BLD", "IBP"],
     "home improvement retial": ["HD", "LOW", "BLDR", "W", "WSM"],
     "loging": ["MAR", "HLT", "H"],
     "airline": ["DAL", "UAL", "LUV", "AAL"],
     "resort & casinos": ["LVS", "WYNN", "MGM", "CZR"],
-    "travel service": ["BKNG", "ABNB", "RCL", "EXPE", "MMYR", "YOU"],
+    "travel service": ["BKNG", "ABNB", "RCL", "EXPE", "MMYT", "YOU"],
     "gambling": ["FLUT", "DKNG"],
     "restaurants": ["MCD", "SBUX", "CMG", "DRI", "DPZ", "TXRH", "WING", "CAVA", "SG"],
+    "apparel" :["TJX", "NKE", "RL", "AS", "LULU", "ONON", "DECK", "VFC", "CROX", "GOOS"],
     "telecom service": ["TMUS", "VZ", "T", "CMCSA", "ERIC"], 
     "discount stores": ["WMT", "COST", "TGT", "SFM"],
     "household & personal products": ["PG", "PM", "UL", "CL", "KMB", "KVUE", "ULTA", "ELF", "HIMS"],
     "utilities - regulated electric": ["NEE", "SO", "HE"],
+    "waste management": ["WM", "RSG", "WCN"],
+    "insurance - diversified": ["BRK-B", "AIG"],
+    "insurance - property & casualty": ["PGR", "ALL", "CB","TRV", "HIG", "WRB", "GWRE"],
+    "insurance - brokers": ["MMC", "AON", "AJG", "BRO", "ERIE"],
+    "beverages - Non-alcohol": ["KO", "PEP", "KDP", "COKE", "MNST", "CELH", "PRMB"],
+    "packaged food": ["KHC", "GIS", "MKC", "CPB", "PPC", "POST", "BRBR" , "FRPT"],
+    "farm products": ["ADM", "TSN", "CALM", "VITL"],
+    "specialty retail": [],
+    "drug - general": ["LLY", "JNJ", "ABBV", "MRK", "AZN", "AMGN", "PFE","BMY", "GILD"],
+    "biotech": ["NVO", "VRTX", "REGN", "MRNA", "UTHR"],
+    "diagnostics" : ["TMO", "ILMN"],
+    "healthcare plans": ["UNH", "CVS", "ELV", "CI", "HUM", "OSCR", "ALHC"],
+    "hospital": ["HCA", "THC", "UHS", "DVA"],
+    "health informaction service": ["GEHC", "VEEV"],
+    "medical devices": ["ABT", "SYK", "BSX", "MDT", "EW"],
+    "medical instruments": ["ISRG", "BDX", "ALC"],
+    "industrial dis": ["GWW", "FAST", "CNM"],
+    "marine shipping": ["KEX", "MATX"],
+    "specialty chemicals": ["LIN", "SHW", "ECL"],
+    "IT servies": ["IBM", "ACN", "INFY", "IT", "EPAM", "GLOB"],
+    "oil & gas integrated": ["XOM", "CVX", "SHEL"],
 }
 
 
@@ -115,11 +143,106 @@ def fetch_pe_ps(session: requests.Session, ticker: str, sleep_s: float = 0.15) -
     except Exception:
         return ticker, "NA", "NA"
 
+
+def calc_growth_pct(series, window):
+    series_chrono = series.iloc[::-1]
+    growth_chrono = series_chrono.rolling(window=window, min_periods=window).apply(
+        lambda x: (x[-1] - x[0]) / x[0] if x[0] not in (0, None) else float("nan"),
+        raw=True,
+    )
+    growth = growth_chrono.iloc[::-1]
+    growth_pct = (growth * 100).round(0).astype("Int64")
+    return growth_pct.map(lambda v: f"{v}%" if pd.notna(v) else pd.NA)
+
+
+def calc_yoy_pct(series):
+    return calc_growth_pct(series, window=5)
+
+
+def calc_qoq_pct(series):
+    return calc_growth_pct(series, window=2)
+
+
+def add_growth_row(df, source_row, row_name, calc_func, insert_after=None):
+    if source_row not in df.index:
+        return df
+
+    values = (
+        df.loc[source_row]
+        .replace({",": ""}, regex=True)
+        .pipe(pd.to_numeric, errors="coerce")
+    )
+
+    growth = calc_func(values)
+
+    df_out = df.copy()
+    if row_name in df_out.index:
+        df_out = df_out.drop(index=row_name)
+
+    anchor = insert_after if insert_after in df_out.index else source_row
+    if anchor not in df_out.index:
+        return df_out
+    insert_at = list(df_out.index).index(anchor) + 1
+    upper = df_out.iloc[:insert_at]
+    lower = df_out.iloc[insert_at:]
+    return pd.concat([upper, pd.DataFrame([growth], index=[row_name]), lower])
+
+
+def add_yoy_row(df, source_row, row_name, insert_after=None):
+    return add_growth_row(df, source_row, row_name, calc_yoy_pct, insert_after=insert_after)
+
+
+def add_qoq_row(df, source_row, row_name, insert_after=None):
+    return add_growth_row(df, source_row, row_name, calc_qoq_pct, insert_after=insert_after)
+
+
+def at_or_na(df, row, col, default="N/A"):
+    try:
+        return df.at[row, col]
+    except KeyError:
+        return default
+
 def fetch_rev_ebit(ticker: str):
-    pass
+    s = Statements()
+    # Quarterly Income Statement
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+    
+    df_is_q = add_yoy_row(df_is_q, "Total Revenue", "rev yoy%", insert_after="Total Revenue")
+    df_is_q = add_yoy_row(df_is_q, "Net Income Before Taxes", "EBIT yoy", insert_after="Net Income Before Taxes")
+    df_is_q = add_yoy_row(df_is_q, "Net Income", "Net Income yoy", insert_after="Net Income")
+    df_is_q = add_yoy_row(df_is_q, "EBITDA", "EBITDA yoy", insert_after="EBITDA")
+    df_is_q = add_qoq_row(df_is_q, "Total Revenue", "rev qoq%", insert_after="rev yoy%")
+    df_is_q = add_qoq_row(df_is_q, "Net Income Before Taxes", "EBIT qoq", insert_after="EBIT yoy")
+    df_is_q = add_qoq_row(df_is_q, "Net Income", "Net Income qoq", insert_after="Net Income yoy")
+    df_is_q = add_qoq_row(df_is_q, "EBITDA", "EBITDA qoq", insert_after="EBITDA yoy")
+    print(df_is_q)
+    print(at_or_na(df_is_q, 'rev yoy%', 0))
+    print(at_or_na(df_is_q, 'EBIT yoy', 0))
+    print(at_or_na(df_is_q, 'Net Income yoy', 0))
+    print(at_or_na(df_is_q, 'EBITDA yoy', 0))
+    print(at_or_na(df_is_q, 'rev qoq%', 0))
+    print(at_or_na(df_is_q, 'EBIT qoq', 0))
+    print(at_or_na(df_is_q, 'Net Income qoq', 0))
+    print(at_or_na(df_is_q, 'EBITDA qoq', 0))
+
+    return at_or_na(df_is_q, 'rev yoy%', 0), at_or_na(df_is_q, 'EBIT yoy', 0), at_or_na(df_is_q, 'Net Income yoy', 0), at_or_na(df_is_q, 'EBITDA yoy', 0), at_or_na(df_is_q, 'rev qoq%', 0), at_or_na(df_is_q, 'EBIT qoq', 0), at_or_na(df_is_q, 'Net Income qoq', 0), at_or_na(df_is_q, 'EBITDA qoq', 0)
+
 
 def main():
     asof = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
+
+    columns = [
+        "sector",
+        "ticker",
+        "date",
+        "TTM P/E (GAAP)",
+        "TTM P/S (GAAP)",
+        "rev yoy%",
+        "EBIT yoy",
+        "EBITDA yoy",
+        "Net Income yoy",
+    ]
+    empty_row = {col: "" for col in columns}
 
     rows = []
     with requests.Session() as s:
@@ -130,22 +253,32 @@ def main():
 
         for sector, tickers in sector_to_tickers.items():
             for t in tickers:
+                print(t)
                 ticker, pe, ps = fetch_pe_ps(s, t)
-                _ = fetch_rev_ebit(s)
+                rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
                 rows.append({
                     "sector" : sector,
                     "ticker": ticker,
                     "date": asof,
                     "TTM P/E (GAAP)": pe,
                     "TTM P/S (GAAP)": ps,
+                    "rev yoy%": rev_yoy,
+                    "EBIT yoy": ebit_yoy,
+                    "EBITDA yoy": ebitda_yoy,
+                    "Net Income yoy": net_income_yoy,
+                    # "rev qoq%": rev_qoq,
+                    # "EBIT qoq": ebit_qoq,
+                    # "Net Income qoq": net_income_qoq,
+                    # "EBITDA qoq": ebitda_qoq,
                 })
                 if i % 25 == 0:
                     print(f"Fetched {i}/{num_of_tickers}...")
                 i += 1
-            if i >= 25:
-                break 
+            rows.append(empty_row.copy())
+            # if i >= 25:
+            #     break 
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows, columns=columns)
     output_dir = Path("ticker_ps_pe_revyoy_ebityoy_eyoy")
     output_dir.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_dir / f"{asof}_.csv", index=False)
