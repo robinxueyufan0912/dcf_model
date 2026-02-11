@@ -1,2 +1,16 @@
 62:104: execution error: Messages got an error: AppleEvent timed out. (-1712)
 62:104: execution error: Messages got an error: AppleEvent timed out. (-1712)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 870, in <module>
+    run_vx_eod_report(end_date)
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 770, in run_vx_eod_report
+    download_cboe_vx_csvs(cboe_vx_futures_hlocv_data)
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 226, in download_cboe_vx_csvs
+    out_path.write_bytes(resp.read())
+                         ^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 489, in read
+    s = self._safe_read(self.length)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 640, in _safe_read
+    raise IncompleteRead(data, amt-len(data))
+http.client.IncompleteRead: IncompleteRead(323 bytes read, 13429 more expected)

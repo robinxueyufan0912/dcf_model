@@ -1,0 +1,506 @@
+sector	ticker	date	TTM P/E (GAAP)	TTM P/S (GAAP)	rev yoy%	EBIT yoy	EBITDA yoy	Net Income yoy
+crypto	MSTR	2026-01-18	8.08	105.10	11.0%	-909.0%	-152.0%	-878.0%
+crypto	BMNR	2026-01-18	NA	1971.28	91.0%	545920.0%	26333.0%	131984.0%
+crypto	CRCL	2026-01-18	NA	NA	72.0%	193.0%	51.0%	
+crypto	DJT	2026-01-18	NA	1042.13	-4.0%	184.0%	72.0%	185.0%
+								
+misc	TEM	2026-01-18	NA	11.32	85.0%	10.0%	-26.0%	5.0%
+								
+TMT - mag7	AAPL	2026-01-18	34.26	9.02	8.0%	11.0%	9.0%	86.0%
+TMT - mag7	MSFT	2026-01-18	32.72	11.63	18.0%	13.0%	34.0%	12.0%
+TMT - mag7	GOOG	2026-01-18	32.59	10.33	16.0%	39.0%	25.0%	33.0%
+TMT - mag7	AMZN	2026-01-18	33.78	3.70	13.0%	56.0%	19.0%	38.0%
+TMT - mag7	META	2026-01-18	27.41	8.25	26.0%	22.0%	19.0%	-83.0%
+								
+TMT - tsla	TSLA	2026-01-18	292.33	15.21	12.0%	-30.0%	-15.0%	-37.0%
+								
+TMT - e-commerce	UI	2026-01-18	42.09	12.08	33.0%	63.0%	52.0%	62.0%
+								
+								
+TMT - cons disc - Mobility/Delivery	UBER	2026-01-18	10.89	3.55	20.0%	-5.0%	43.0%	154.0%
+TMT - cons disc - Mobility/Delivery	DASH	2026-01-18	104.17	7.00	27.0%	60.0%	82.0%	51.0%
+TMT - cons disc - Mobility/Delivery	CART	2026-01-18	21.64	2.85	10.0%	18.0%	24.0%	20.0%
+								
+TMT - cons disc - E-comm	SHOP	2026-01-18	114.10	18.96	32.0%	-64.0%	43.0%	-68.0%
+TMT - cons disc - E-comm	EBAY	2026-01-18	20.25	3.90	11.0%	-28.0%	-9.0%	0.0%
+TMT - cons disc - E-comm	ETSY	2026-01-18	43.18	2.14	2.0%	25.0%	-6.0%	32.0%
+TMT - cons disc - E-comm	SE	2026-01-18	51.93	3.15	38.0%	118.0%	112.0%	150.0%
+TMT - cons disc - E-comm	CPNG	2026-01-18	100.00	1.15	18.0%	25.0%	29.0%	36.0%
+								
+TMT - cons disc - entertain	NFLX	2026-01-18	36.76	9.28	19.0%	15.0%	12.0%	8.0%
+TMT - cons disc - entertain	DIS	2026-01-18	16.23	2.11	0.0%	116.0%	3.0%	185.0%
+TMT - cons disc - entertain	SPOT	2026-01-18	78.72	5.56	14.0%	121.0%	33.0%	219.0%
+								
+TMT - cons disc - social	RBLX	2026-01-18	NA	13.72	48.0%	7.0%	15.0%	7.0%
+TMT - cons disc - social	RDDT	2026-01-18	127.24	22.98	68.0%	438.0%	1216.0%	445.0%
+TMT - cons disc - social	PINS	2026-01-18	8.98	4.31	17.0%	193.0%	-13512.0%	201.0%
+TMT - cons disc - social	SNAP	2026-01-18	NA	2.24	10.0%	-29.0%	-36.0%	-32.0%
+TMT - cons disc - social	MTCH	2026-01-18	14.58	2.13	2.0%	9.0%	-12.0%	18.0%
+								
+TMT - cons disc - adtech	APP	2026-01-18	71.68	34.82	17.0%	118.0%	76.0%	92.0%
+TMT - cons disc - adtech	TTD	2026-01-18	40.48	6.15	18.0%	41.0%	50.0%	23.0%
+TMT - cons disc - adtech	ROKU	2026-01-18	NA	3.37	14.0%	-879.0%	50.0%	-375.0%
+TMT - cons disc - adtech	U	2026-01-18	NA	9.72	5.0%	0.0%	-232.0%	1.0%
+								
+TMT - cons disc - edu	DUOL	2026-01-18	19.09	7.18	41.0%	83.0%	155.0%	1151.0%
+TMT - cons disc - edu	COUR	2026-01-18	NA	1.43	10.0%	-36.0%	-47.0%	-37.0%
+								
+TMT - cons disc - realestate	RKT	2026-01-18	292.70	12.00	39.0%	-63.0%	N/A	463.0%
+TMT - cons disc - realestate	Z	2026-01-18	NA	6.66	16.0%	-160.0%	185.0%	-150.0%
+								
+TMT - cons disc - misc	IOT	2026-01-18	NA	13.24	29.0%	-124.0%	-653.0%	-121.0%
+								
+TMT - cybersecurity	PANW	2026-01-18	119.03	13.69	16.0%	12.0%	-5.0%	-5.0%
+TMT - cybersecurity	CRWD	2026-01-18	NA	25.06	22.0%	121.0%	2.0%	102.0%
+TMT - cybersecurity	FTNT	2026-01-18	31.04	8.55	14.0%	-5.0%	17.0%	-12.0%
+TMT - cybersecurity	ZS	2026-01-18	NA	12.04	26.0%	90.0%	-289.0%	-4.0%
+TMT - cybersecurity	NET	2026-01-18	NA	32.04	31.0%	-114.0%	88.0%	-92.0%
+TMT - cybersecurity	CYBR	2026-01-18	NA	17.58	43.0%	-338.0%	-163.0%	-554.0%
+TMT - cybersecurity	OKTA	2026-01-18	82.22	5.59	12.0%	100.0%	683.0%	169.0%
+TMT - cybersecurity	RBRK	2026-01-18	NA	11.22	48.0%	-53.0%	-44.0%	-51.0%
+TMT - cybersecurity	CVLT	2026-01-18	68.83	4.92	18.0%	-9.0%	-18.0%	-5.0%
+TMT - cybersecurity	NTNX	2026-01-18	61.08	4.73	13.0%	78.0%	29.0%	107.0%
+								
+TMT - Data/Infra/Observability	SNOW	2026-01-18	NA	16.41	29.0%	-12.0%	-15.0%	-9.0%
+TMT - Data/Infra/Observability	MDB	2026-01-18	NA	14.04	19.0%	-119.0%	-58.0%	-79.0%
+TMT - Data/Infra/Observability	DDOG	2026-01-18	403.18	13.00	28.0%	-36.0%	-22.0%	-34.0%
+TMT - Data/Infra/Observability	DT	2026-01-18	23.92	6.49	18.0%	51.0%	29.0%	30.0%
+								
+TMT - devops	GTLB	2026-01-18	NA	6.34	25.0%	-37.0%	-72.0%	-128.0%
+TMT - devops	FROG	2026-01-18	NA	13.39	26.0%	-38.0%	-17.0%	-28.0%
+TMT - devops	DBX	2026-01-18	14.81	2.59	-1.0%	18.0%	31.0%	16.0%
+								
+data center - TPU	VICR	2026-01-18	82.10	16.87	19.0%	156.0%	158.0%	145.0%
+								
+data center	NOK	2026-01-18	37.43	1.68	19.0%	10.0%	24.0%	-51.0%
+								
+data center - hyper scaler	ORCL	2026-01-18	35.91	9.00	14.0%	86.0%	25.0%	95.0%
+data center - hyper scaler	CRWV	2026-01-18	NA	11.71	134.0%	-26.0%	84.0%	-72.0%
+data center - hyper scaler	NBIS	2026-01-18	NA	79.50	237.0%	118.0%	-51.0%	27.0%
+data center - hyper scaler	IREN	2026-01-18	29.48	27.63	355.0%	-1241.0%	-444.0%	-844.0%
+data center - hyper scaler	WULF	2026-01-18	NA	34.60	87.0%	2170.0%	-3378.0%	1876.0%
+data center - hyper scaler	CIFR	2026-01-18	NA	35.98	198.0%	-96.0%	-260.0%	-96.0%
+								
+data center - semi chip	NVDA	2026-01-18	46.13	24.18	62.0%	70.0%	65.0%	65.0%
+data center - semi chip	MU	2026-01-18	34.48	9.65	57.0%	182.0%	97.0%	180.0%
+data center - semi chip	AVGO	2026-01-18	73.88	26.10	28.0%	83.0%	30.0%	97.0%
+data center - semi chip	AMD	2026-01-18	114.57	11.78	36.0%	78.0%	30.0%	61.0%
+								
+data center - semi equip	ASML	2026-01-18	50.87	14.82	7.0%	8.0%	9.0%	9.0%
+data center - semi equip	LRCX	2026-01-18	49.13	14.29	28.0%	44.0%	42.0%	41.0%
+data center - semi equip	AMAT	2026-01-18	37.70	9.14	-3.0%	20.0%	-7.0%	10.0%
+data center - semi equip	KLAC	2026-01-18	49.22	16.45	13.0%	21.0%	13.0%	19.0%
+								
+data center - package	TSM	2026-01-18	32.11	14.49	25.0%	38.0%	27.0%	41.0%
+data center - package	ASX	2026-01-18	38.64	2.11	14.0%	25.0%	23.0%	21.0%
+data center - package	AMKR	2026-01-18	38.68	1.84	7.0%	9.0%	8.0%	3.0%
+								
+data center - test	TER	2026-01-18	83.03	12.50	4.0%	-7.0%	-3.0%	-18.0%
+								
+data center - PCB	TTMI	2026-01-18	80.51	3.75	22.0%	147.0%	22.0%	271.0%
+								
+data center - rack manufacture	CLS	2026-01-18	50.89	3.20	28.0%	151.0%	45.0%	199.0%
+								
+data center - router	ANET	2026-01-18	49.41	19.35	27.0%	22.0%	25.0%	14.0%
+data center - router	MRVL	2026-01-18	28.17	8.76	37.0%	-395.0%	-22877.0%	-381.0%
+								
+data center - optics	CRDO	2026-01-18	131.78	34.25	272.0%	-2230.0%	-2601.0%	-2058.0%
+data center - optics	MTSI	2026-01-18	NA	17.10	30.0%	72.0%	25.0%	53.0%
+data center - optics	SMTC	2026-01-18	254.96	6.99	13.0%	-225.0%	45.0%	-62.0%
+data center - optics	LITE	2026-01-18	216.76	12.48	58.0%	-107.0%	1279.0%	-105.0%
+data center - optics	COHR	2026-01-18	275.31	4.97	17.0%	1024.0%	20.0%	-3342.0%
+data center - optics	FN	2026-01-18	50.97	4.93	22.0%	26.0%	18.0%	24.0%
+data center - optics	CIEN	2026-01-18	286.58	7.19	26.0%	-96.0%	35.0%	-56.0%
+data center - optics	CSCO	2026-01-18	28.35	5.15	8.0%	50.0%	7.0%	5.0%
+data center - optics	ADI	2026-01-18	65.71	13.34	26.0%	72.0%	32.0%	65.0%
+data center - optics	APH	2026-01-18	51.46	9.01	53.0%	112.0%	81.0%	106.0%
+data center - optics	GLW	2026-01-18	59.74	5.41	21.0%	-698.0%	20.0%	-468.0%
+								
+data center - NAND/SSD	STX	2026-01-18	41.88	7.29	21.0%	94.0%	66.0%	80.0%
+data center - NAND/SSD	WDC	2026-01-18	32.30	6.31	-31.0%	113.0%	-11.0%	140.0%
+data center - NAND/SSD	SNDK	2026-01-18	NA	7.79	23.0%	-54.0%	-38.0%	-47.0%
+								
+data center - server	DELL	2026-01-18	16.08	0.77	11.0%	39.0%	15.0%	37.0%
+data center - server	SMCI	2026-01-18	26.16	0.93	-15.0%	-58.0%	-61.0%	-60.0%
+								
+data center - 板级DC-DC(最贴近 GPU/CPU)	MPWR	2026-01-18	26.38	18.60	19.0%	18.0%	20.0%	23.0%
+								
+data center - 服务器电源(PowerShelf/Front-End PSU/48V架构)	AEIS	2026-01-18	66.79	5.56	24.0%	-459.0%	97.0%	-410.0%
+								
+data center - IT侧配电(PDU/RPP/机柜侧高功率连接）	NVT	2026-01-18	31.00	5.07	35.0%	42.0%	32.0%	15.0%
+								
+data center - 设施侧关键电力(Switchgear/Busway/PowerPods/模块化电力房）	ETN	2026-01-18	34.38	5.01	10.0%	6.0%	16.0%	0.0%
+data center - 设施侧关键电力(Switchgear/Busway/PowerPods/模块化电力房）	VRT	2026-01-18	66.69	6.98	29.0%	83.0%	39.0%	126.0%
+data center - 设施侧关键电力(Switchgear/Busway/PowerPods/模块化电力房）	FLEX	2026-01-18	28.61	0.91	4.0%	-1.0%	6.0%	-7.0%
+data center - 设施侧关键电力(Switchgear/Busway/PowerPods/模块化电力房）	POWL	2026-01-18	28.28	4.62	8.0%	12.0%	15.0%	12.0%
+								
+data center - 230kV->13.8kV	HUBB	2026-01-18	30.35	4.57	4.0%	11.0%	9.0%	16.0%
+								
+data center - UPS battery	FLNC	2026-01-18	NA	2.19	-15.0%	-39.0%	-5.0%	-62.0%
+data center - UPS battery	ENS	2026-01-18	19.66	1.67	8.0%	-9.0%	15.0%	-17.0%
+								
+data center - onsite power generator	CAT	2026-01-18	33.19	4.68	10.0%	1.0%	-3.0%	-7.0%
+data center - onsite power generator	CMI	2026-01-18	30.05	2.38	-2.0%	-20.0%	0.0%	-34.0%
+data center - onsite power generator	BE	2026-01-18	NA	19.44	57.0%	56.0%	144.0%	57.0%
+								
+data center - construction builder	EME	2026-01-18	28.10	1.93	16.0%	10.0%	14.0%	9.0%
+data center - construction builder	FIX	2026-01-18	47.43	4.75	35.0%	97.0%	74.0%	99.0%
+data center - construction builder	URI	2026-01-18	23.70	3.67	6.0%	-1.0%	2.0%	-1.0%
+								
+data center - medium volt transformer	GEV	2026-01-18	110.45	4.91	12.0%	-711.0%	180.0%	-571.0%
+data center - medium volt transformer	PWR	2026-01-18	69.24	2.56	18.0%	21.0%	24.0%	16.0%
+								
+data center - new IPP	TLN	2026-01-18	80.74	4.18	35.0%	70.0%	43.0%	23.0%
+data center - new IPP	OKLO	2026-01-18	NA	NA		200.0%	196.0%	198.0%
+data center - new IPP	SMR	2026-01-18	NA	95.65	1653.0%	1070.0%	1226.0%	1465.0%
+								
+data center - IPP	CEG	2026-01-18	35.24	3.58	23.0%	-15.0%	23.0%	-22.0%
+data center - IPP	VST	2026-01-18	59.51	2.57	-3.0%	-64.0%	-20.0%	-67.0%
+data center - IPP	NRG	2026-01-18	22.22	0.98	5.0%	-123.0%	-68.0%	-117.0%
+								
+data center - uranium	CCJ	2026-01-18	134.41	20.47	-16.0%	-58.0%	-20.0%	-102.0%
+data center - uranium	UEC	2026-01-18	NA	173.63	-100.0%	-49.0%	120.0%	-49.0%
+data center - uranium	LEU	2026-01-18	50.31	13.28	30.0%	36.0%	208.0%	-178.0%
+								
+data center - HVAC	TT	2026-01-18	29.98	4.10	6.0%	13.0%	14.0%	10.0%
+data center - HVAC	CARR	2026-01-18	22.55	2.15	-7.0%	-44.0%	-17.0%	-28.0%
+data center - HVAC	JCI	2026-01-18	22.51	2.97	3.0%	-45.0%	1.0%	167.0%
+data center - HVAC	SPXC	2026-01-18	46.43	5.02	23.0%	23.0%	32.0%	24.0%
+								
+chips	QCOM	2026-01-18	32.60	3.86	10.0%	14.0%	6.0%	-207.0%
+chips	INTC	2026-01-18	4430.19	4.38	3.0%	-150.0%	2075.0%	-124.0%
+chips	ARM	2026-01-18	135.84	25.44	34.0%	372.0%	102.0%	122.0%
+								
+robotic	PH	2026-01-18	33.63	5.95	4.0%	19.0%	8.0%	16.0%
+robotic	ALNT	2026-01-18	54.80	1.95	11.0%	207.0%	46.0%	209.0%
+robotic	ROK	2026-01-18	54.25	5.60	14.0%	-77.0%	38.0%	-42.0%
+robotic	SNPS	2026-01-18	64.35	14.01	38.0%	60.0%	38.0%	-60.0%
+robotic	SYM	2026-01-18	NA	17.99	7.0%	-142.0%	-115.0%	-173.0%
+robotic	ATI	2026-01-18	40.10	3.69	7.0%	26.0%	15.0%	33.0%
+								
+material - rare earth	MP	2026-01-18	NA	52.53	-15.0%	68.0%	82.0%	64.0%
+material - rare earth	CRML	2026-01-18	NA	NA	N/A	N/A	N/A	N/A
+								
+material - aluminum/copper/lithium	AA	2026-01-18	13.64	1.19	3.0%	-9.0%	-51.0%	158.0%
+material - aluminum/copper/lithium	SCCO	2026-01-18	38.91	12.02	15.0%	21.0%	20.0%	24.0%
+material - aluminum/copper/lithium	ALB	2026-01-18	NA	3.88	-3.0%	-80.0%	-215.0%	-82.0%
+material - aluminum/copper/lithium	LAC	2026-01-18	NA	NA		2371.0%	69.0%	2353.0%
+								
+quatum	IBM	2026-01-18	36.56	4.37	9.0%	-403.0%	26.0%	-628.0%
+quatum	IONQ	2026-01-18	NA	225.42	222.0%	1920.0%	166.0%	1909.0%
+quatum	RGTI	2026-01-18	NA	1128.87	-18.0%	1255.0%	19.0%	1255.0%
+								
+TMT - SAAS	SAP	2026-01-18	34.98	6.59	14.0%	36.0%	19.0%	46.0%
+TMT - SAAS	CRM	2026-01-18	30.30	5.28	9.0%	44.0%	17.0%	37.0%
+TMT - SAAS	NOW	2026-01-18	76.98	10.44	22.0%	34.0%	37.0%	16.0%
+TMT - SAAS	ADBE	2026-01-18	17.73	5.11	10.0%	14.0%	8.0%	10.0%
+TMT - SAAS	INTU	2026-01-18	37.34	7.81	18.0%	163.0%	54.0%	126.0%
+TMT - SAAS	ADP	2026-01-18	25.69	5.04	7.0%	6.0%	5.0%	6.0%
+TMT - SAAS	WDAY	2026-01-18	78.46	5.34	13.0%	49.0%	48.0%	31.0%
+TMT - SAAS	ADSK	2026-01-18	51.58	8.20	18.0%	33.0%	3.0%	25.0%
+TMT - SAAS	TEAM	2026-01-18	NA	5.71	21.0%	87.0%	55.0%	-58.0%
+TMT - SAAS	HUBS	2026-01-18	NA	5.47	21.0%	117.0%	192.0%	103.0%
+TMT - SAAS	TWLO	2026-01-18	285.61	3.69	15.0%	-995.0%	78.0%	-483.0%
+TMT - SAAS	ZM	2026-01-18	15.73	4.99	4.0%	183.0%	59.0%	196.0%
+TMT - SAAS	DOCU	2026-01-18	39.69	3.60	8.0%	33.0%	34.0%	34.0%
+TMT - SAAS	BILL	2026-01-18	NA	3.11	10.0%	-128.0%	-29.0%	-133.0%
+TMT - SAAS	GDDY	2026-01-18	18.00	2.90	10.0%	21.0%	15.0%	10.0%
+TMT - SAAS	WIX	2026-01-18	34.73	2.28	14.0%	-61.0%	7.0%	-102.0%
+TMT - SAAS	PATH	2026-01-18	33.82	4.94	16.0%	-196.0%	-149.0%	-1967.0%
+								
+CN	BABA	2026-01-18	22.77	2.65	5.0%	-52.0%	-67.0%	-52.0%
+CN	NIO	2026-01-18	NA	0.98	17.0%	-32.0%		-29.0%
+								
+Fin - bank	JPM	2026-01-18	15.62	3.04	N/A	-1.0%	N/A	-7.0%
+Fin - bank	BAC	2026-01-18	13.82	1.99	N/A	35.0%	N/A	14.0%
+Fin - bank	C	2026-01-18	16.94	1.24	N/A	0.0%	N/A	-16.0%
+Fin - bank	BK	2026-01-18	16.37	2.06	N/A	25.0%	N/A	26.0%
+Fin - bank	MS	2026-01-18	18.53	2.51	N/A	17.0%	N/A	19.0%
+Fin - bank	GS	2026-01-18	18.75	2.37	N/A	11.0%	N/A	12.0%
+								
+Fin - credit	AXP	2026-01-18	24.50	3.19	10.0%	19.0%	N/A	16.0%
+Fin - credit	COF	2026-01-18	101.42	2.42	N/A	98.0%	N/A	82.0%
+Fin - credit	AFRM	2026-01-18	109.04	7.71	34.0%	-184.0%	N/A	-181.0%
+Fin - credit	KLAR	2026-01-18	NA	6.37	28.0%	-680.0%	-216.0%	-628.0%
+Fin - credit	SOFI	2026-01-18	47.38	7.41	28.0%	133.0%	N/A	129.0%
+Fin - credit	UPST	2026-01-18	211.24	4.84	71.0%	-576.0%	-175.0%	-570.0%
+Fin - credit	FICO	2026-01-18	59.04	18.66	14.0%	18.0%	25.0%	14.0%
+								
+Fin - payment	V	2026-01-18	32.50	15.69	12.0%	-2.0%	11.0%	-4.0%
+Fin - payment	MA	2026-01-18	34.50	15.38	17.0%	29.0%	21.0%	20.0%
+Fin - payment	FISV	2026-01-18	10.25	1.68	1.0%	-24.0%	-15.0%	40.0%
+Fin - payment	PYPL	2026-01-18	11.41	1.62	8.0%	17.0%	9.0%	24.0%
+Fin - payment	XYZ	2026-01-18	13.27	1.67	2.0%	86.0%	28.0%	63.0%
+Fin - payment	TOST	2026-01-18	76.88	3.36	25.0%	82.0%	115.0%	88.0%
+								
+Fin - broker	SCHW	2026-01-18	24.35	6.79	7.0%	64.0%	N/A	75.0%
+Fin - broker	IBKR	2026-01-18	35.34	3.23	15.0%	44.0%	N/A	43.0%
+Fin - broker	HOOD	2026-01-18	45.14	23.14	99.0%	314.0%	N/A	271.0%
+Fin - broker	COIN	2026-01-18	20.88	7.44	22.0%	632.0%	N/A	473.0%
+								
+Fin - asset manage	BLK	2026-01-18	33.23	7.61	26.0%	-24.0%	N/A	-33.0%
+Fin - asset manage	BX	2026-01-18	46.89	14.24	41.0%	-20.0%	N/A	-20.0%
+Fin - asset manage	KKR	2026-01-18	55.99	6.62	-2.0%	34.0%	N/A	43.0%
+Fin - asset manage	BN	2026-01-18	133.67	1.54	-7.0%	-83.0%	N/A	743.0%
+Fin - asset manage	APO	2026-01-18	21.32	3.00	26.0%	39.0%	N/A	120.0%
+Fin - asset manage	SSNC	2026-01-18	25.54	3.40	7.0%	13.0%	9.0%	28.0%
+Fin - asset manage	CWAN	2026-01-18	15.86	11.09	77.0%	-334.0%	236.0%	-385.0%
+								
+Fin - mm	VIRT	2026-01-18	7.99	1.82	26.0%	22.0%	N/A	29.0%
+								
+Fin - data & stock exchange	ICE	2026-01-18	31.68	8.35	7.0%	20.0%	N/A	24.0%
+Fin - data & stock exchange	NDAQ	2026-01-18	36.00	7.06	3.0%	49.0%	N/A	38.0%
+Fin - data & stock exchange	CME	2026-01-18	27.09	15.75	-3.0%	0.0%	N/A	-1.0%
+Fin - data & stock exchange	CBOE	2026-01-18	29.37	6.20	8.0%	39.0%	N/A	38.0%
+Fin - data & stock exchange	MRX	2026-01-18	14.88	1.00			N/A	
+Fin - data & stock exchange	SPGI	2026-01-18	39.72	11.02	9.0%	18.0%	25.0%	21.0%
+Fin - data & stock exchange	MSCI	2026-01-18	38.20	14.82	9.0%	11.0%	9.0%	16.0%
+Fin - data & stock exchange	MCO	2026-01-18	43.33	12.82	11.0%	23.0%	22.0%	21.0%
+Fin - data & stock exchange	TW	2026-01-18	36.29	12.60	13.0%	55.0%	17.0%	63.0%
+Fin - data & stock exchange	MKTX	2026-01-18	29.95	7.76	1.0%	1.0%	N/A	-5.0%
+								
+Industry - farm machinery	DE	2026-01-18	27.80	3.05	11.0%	-6.0%	-6.0%	-14.0%
+Industry - farm machinery	PCAR	2026-01-18	23.76	2.16	-19.0%	-41.0%	-41.0%	-39.0%
+								
+aerospace - & defense	RKLB	2026-01-18	NA	92.76	48.0%	16.0%	7.0%	-65.0%
+aerospace - & defense	DXYZ	2026-01-18	17.44	NA	-5512.0%	-297.0%	N/A	-297.0%
+aerospace - & defense	PL	2026-01-18	NA	31.96	33.0%	191.0%	-37.0%	195.0%
+aerospace - & defense	FLY	2026-01-18	NA	47.84	38.0%	227.0%	96.0%	204.0%
+aerospace - & defense	LUNR	2026-01-18	NA	17.68	-10.0%	-88.0%	32.0%	-87.0%
+aerospace - & defense	PLTR	2026-01-18	399.81	104.58	63.0%	206.0%	229.0%	231.0%
+aerospace - & defense	KTOS	2026-01-18	1064.50	17.18	26.0%	105.0%	12.0%	172.0%
+aerospace - & defense	AVAV	2026-01-18	NA	14.32	151.0%	-425.0%	126.0%	-327.0%
+aerospace - & defense	ONDS	2026-01-18	NA	198.87	582.0%	-25.0%	100.0%	-18.0%
+aerospace - & defense	RTX	2026-01-18	41.46	3.15	12.0%	28.0%	19.0%	30.0%
+aerospace - & defense	LMT	2026-01-18	32.51	1.84	9.0%	1.0%	6.0%	0.0%
+aerospace - & defense	NOC	2026-01-18	23.94	2.33	4.0%	11.0%	12.0%	7.0%
+aerospace - & defense	LHX	2026-01-18	37.20	2.98	7.0%	32.0%	11.0%	16.0%
+aerospace - & defense	GD	2026-01-18	23.81	1.93	11.0%	14.0%	11.0%	14.0%
+aerospace - & defense	HII	2026-01-18	29.42	1.39	16.0%	82.0%	51.0%	44.0%
+aerospace - & defense	CW	2026-01-18	54.08	7.25	9.0%	12.0%	13.0%	12.0%
+aerospace - & defense	BWXT	2026-01-18	65.17	6.51	29.0%	19.0%	19.0%	18.0%
+aerospace - & defense	LDOS	2026-01-18	18.16	1.44	7.0%	3.0%	4.0%	1.0%
+aerospace - & defense	BAH	2026-01-18	14.87	1.01	-8.0%	-55.0%	-32.0%	-55.0%
+aerospace - & defense	CACI	2026-01-18	28.06	1.58	11.0%	7.0%	24.0%	4.0%
+								
+aerospace - aftermarket	BA	2026-01-18	NA	2.40	30.0%	-16.0%	-19.0%	-12.0%
+aerospace - aftermarket	GE	2026-01-18	43.35	7.80	24.0%	33.0%	36.0%	17.0%
+aerospace - aftermarket	HWM	2026-01-18	63.12	11.34	14.0%	40.0%	26.0%	16.0%
+aerospace - aftermarket	TDG	2026-01-18	45.18	9.24	12.0%	24.0%	18.0%	34.0%
+aerospace - aftermarket	HEI	2026-01-18	71.89	9.45	19.0%	35.0%	9.0%	35.0%
+aerospace - aftermarket	CRS	2026-01-18	41.03	5.78	2.0%	43.0%	25.0%	45.0%
+aerospace - aftermarket	FTAI	2026-01-18	62.59	11.94	42.0%	54.0%	20.0%	46.0%
+								
+Industry - police equipment	MSI	2026-01-18	32.15	5.90	8.0%	4.0%	11.0%	0.0%
+Industry - police equipment	AXON	2026-01-18	201.34	19.62	31.0%	-80.0%	-41.0%	-103.0%
+								
+Industry - auto manufactueres	RACE	2026-01-18	34.87	7.85	14.0%	12.0%	11.0%	8.0%
+Industry - auto manufactueres	GM	2026-01-18	16.24	0.40	0.0%	-62.0%	-20.0%	-57.0%
+Industry - auto manufactueres	F	2026-01-18	11.66	0.29	9.0%	109.0%	48.0%	174.0%
+Industry - auto manufactueres	CPRT	2026-01-18	25.17	8.53	1.0%	8.0%	5.0%	11.0%
+								
+home building - residential construction	DHI	2026-01-18	13.45	1.33	-3.0%	-30.0%	-24.0%	-29.0%
+home building - residential construction	TOL	2026-01-18	10.82	1.27	3.0%	-5.0%	-8.0%	-6.0%
+home building - residential construction	KBH	2026-01-18	9.96	0.64	-15.0%	-48.0%	-45.0%	-46.0%
+home building - residential construction	BLD	2026-01-18	25.07	2.65	1.0%	-16.0%	-3.0%	-16.0%
+home building - residential construction	IBP	2026-01-18	33.34	2.83	2.0%	7.0%	6.0%	8.0%
+								
+home building - material	CRH	2026-01-18	24.47	2.23	5.0%	1.0%	9.0%	11.0%
+home building - material	MLM	2026-01-18	34.33	5.92	-2.0%	-2.0%	2.0%	14.0%
+home building - material	VMC	2026-01-18	36.37	5.13	14.0%	66.0%	24.0%	81.0%
+								
+home building - home improvement retial	HD	2026-01-18	25.92	2.28	3.0%	-1.0%	0.0%	-1.0%
+home building - home improvement retial	LOW	2026-01-18	23.01	1.85	3.0%	-4.0%	1.0%	-5.0%
+home building - home improvement retial	BLDR	2026-01-18	24.13	0.90	-7.0%	-57.0%	-34.0%	-57.0%
+home building - home improvement retial	W	2026-01-18	NA	1.22	8.0%	37.0%	452.0%	34.0%
+home building - home improvement retial	WSM	2026-01-18	23.25	3.19	5.0%	-1.0%	-1.0%	-3.0%
+								
+cons disc - loging	MAR	2026-01-18	34.42	3.37	4.0%	26.0%	N/A	25.0%
+cons disc - loging	HLT	2026-01-18	43.60	5.96	9.0%	23.0%	N/A	22.0%
+cons disc - loging	H	2026-01-18	NA	2.29	10.0%	-103.0%	N/A	-110.0%
+								
+cons disc - airline	DAL	2026-01-18	9.19	0.73	3.0%	26.0%	-11.0%	45.0%
+cons disc - airline	UAL	2026-01-18	11.37	0.63	3.0%	-2.0%	-11.0%	-2.0%
+cons disc - airline	LUV	2026-01-18	65.71	0.81	1.0%	-24.0%	-5.0%	-19.0%
+cons disc - airline	AAL	2026-01-18	18.48	0.19	0.0%	-45.0%	-44.0%	-23.0%
+								
+cons disc - resort & casinos	LVS	2026-01-18	26.60	3.25	24.0%	44.0%	36.0%	52.0%
+cons disc - resort & casinos	WYNN	2026-01-18	25.21	1.67	8.0%	1519.0%	61.0%	-376.0%
+cons disc - resort & casinos	MGM	2026-01-18	219.59	0.55	2.0%	-174.0%	-15.0%	-255.0%
+cons disc - resort & casinos	CZR	2026-01-18	NA	0.44	0.0%	-223.0%	-11.0%	511.0%
+								
+cons disc - travel service	BKNG	2026-01-18	33.25	6.33	13.0%	21.0%	26.0%	9.0%
+cons disc - travel service	ABNB	2026-01-18	30.91	6.71	11.0%	3.0%	10.0%	0.0%
+cons disc - travel service	RCL	2026-01-18	18.64	4.32	5.0%	42.0%	5.0%	42.0%
+cons disc - travel service	EXPE	2026-01-18	27.28	2.43	9.0%	29.0%	25.0%	40.0%
+cons disc - travel service	MMYT	2026-01-18	113.45	6.93	9.0%	-106.0%	26.0%	-131.0%
+cons disc - travel service	YOU	2026-01-18	18.31	5.37	16.0%	42.0%	43.0%	21.0%
+								
+cons disc - gambling	FLUT	2026-01-18	NA	2.14	17.0%	542.0%	-8.0%	570.0%
+cons disc - gambling	DKNG	2026-01-18	NA	5.32	4.0%	-8.0%	-1.0%	-13.0%
+								
+cons disc - restaurants	MCD	2026-01-18	26.22	8.34	3.0%	4.0%	4.0%	1.0%
+cons disc - restaurants	SBUX	2026-01-18	57.07	2.85	5.0%	-86.0%	-14.0%	-85.0%
+cons disc - restaurants	CMG	2026-01-18	35.22	4.48	8.0%	-1.0%	1.0%	-1.0%
+cons disc - restaurants	DRI	2026-01-18	22.49	1.96	7.0%	11.0%	15.0%	10.0%
+cons disc - restaurants	DPZ	2026-01-18	23.39	2.79	6.0%	-3.0%	11.0%	-5.0%
+cons disc - restaurants	TXRH	2026-01-18	29.71	2.21	13.0%	-6.0%	2.0%	-1.0%
+cons disc - restaurants	WING	2026-01-18	45.11	11.24	8.0%	12.0%	28.0%	11.0%
+cons disc - restaurants	CAVA	2026-01-18	62.14	7.39	20.0%	15.0%	25.0%	-18.0%
+cons disc - restaurants	SG	2026-01-18	NA	1.38	-1.0%	74.0%	342.0%	74.0%
+								
+cons disc - apparel	TJX	2026-01-18	34.77	2.96	7.0%	10.0%	12.0%	11.0%
+cons disc - apparel	NKE	2026-01-18	37.75	2.05	0.0%	-29.0%	-24.0%	-32.0%
+cons disc - apparel	RL	2026-01-18	26.82	2.91	16.0%	29.0%	38.0%	40.0%
+cons disc - apparel	AS	2026-01-18	66.65	3.36	30.0%	53.0%	48.0%	156.0%
+cons disc - apparel	LULU	2026-01-18	14.09	2.23	7.0%	-12.0%	-7.0%	-13.0%
+cons disc - apparel	ONON	2026-01-18	56.73	4.38	35.0%	334.0%	70.0%	322.0%
+cons disc - apparel	DECK	2026-01-18	14.94	2.80	8.0%	7.0%	5.0%	11.0%
+cons disc - apparel	VFC	2026-01-18	83.13	0.77	1.0%	16.0%	10.0%	3.0%
+cons disc - apparel	CROX	2026-01-18	27.09	1.06	-6.0%	-23.0%	-21.0%	-27.0%
+cons disc - apparel	GOOS	2026-01-18	79.05	1.27	1.0%	318.0%	-47.0%	-379.0%
+								
+def - telecom service	TMUS	2026-01-18	17.92	2.43	9.0%	-11.0%	4.0%	-11.0%
+def - telecom service	VZ	2026-01-18	8.29	1.19	1.0%	52.0%	4.0%	50.0%
+def - telecom service	T	2026-01-18	7.63	1.34	2.0%	645.0%	2.0%	-4205.0%
+def - telecom service	CMCSA	2026-01-18	4.62	0.82	-3.0%	-7.0%	-2.0%	-8.0%
+def - telecom service	ERIC	2026-01-18	12.71	1.22	0.0%	211.0%	12.0%	220.0%
+								
+def - discount stores	WMT	2026-01-18	41.99	1.36	6.0%	34.0%	3.0%	34.0%
+def - discount stores	COST	2026-01-18	51.62	1.53	8.0%	12.0%	12.0%	11.0%
+def - discount stores	TGT	2026-01-18	13.50	0.48	-2.0%	-21.0%	-9.0%	-19.0%
+def - discount stores	SFM	2026-01-18	15.22	0.88	13.0%	28.0%	21.0%	31.0%
+								
+def - household & personal products	PG	2026-01-18	21.10	3.98	3.0%	17.0%	5.0%	20.0%
+def - household & personal products	PM	2026-01-18	31.45	6.78	10.0%	16.0%	1.0%	13.0%
+def - household & personal products	UL	2026-01-18	23.54	2.16	N/A	N/A	N/A	N/A
+def - household & personal products	CL	2026-01-18	23.68	3.39	2.0%	1.0%	0.0%	0.0%
+def - household & personal products	KMB	2026-01-18	16.82	1.82	-16.0%	-50.0%	-7.0%	-51.0%
+def - household & personal products	KVUE	2026-01-18	23.12	2.20	-4.0%	-9.0%	-3.0%	4.0%
+def - household & personal products	ULTA	2026-01-18	25.43	2.46	13.0%	-5.0%	0.0%	-5.0%
+def - household & personal products	ELF	2026-01-18	63.78	3.87	14.0%	-114.0%	-27.0%	-84.0%
+def - household & personal products	HIMS	2026-01-18	58.01	3.23	49.0%	-48.0%	30.0%	-79.0%
+								
+def - utilities - regulated electric	NEE	2026-01-18	26.56	6.76	10.0%	18.0%	14.0%	32.0%
+def - utilities - regulated electric	SO	2026-01-18	22.10	3.39	8.0%	10.0%	12.0%	11.0%
+def - utilities - regulated electric	DUK	2026-01-18	18.74	2.93	5.0%	12.0%	8.0%	16.0%
+def - utilities - regulated electric	AEP	2026-01-18	17.55	2.99	9.0%	14.0%	5.0%	1.0%
+def - utilities - regulated electric	D	2026-01-18	20.80	3.28	19.0%	8.0%	14.0%	6.0%
+def - utilities - regulated electric	PEG	2026-01-18	19.08	3.36	23.0%	29.0%	27.0%	20.0%
+def - utilities - regulated electric	PCG	2026-01-18	13.31	1.39	5.0%	33.0%	6.0%	43.0%
+def - utilities - regulated electric	HE	2026-01-18	19.04	0.81	-16.0%	-127.0%	-298.0%	-129.0%
+								
+def - utilities - waste management	WM	2026-01-18	34.86	3.60	15.0%	-22.0%	15.0%	-21.0%
+def - utilities - waste management	RSG	2026-01-18	31.35	3.96	3.0%	0.0%	2.0%	-3.0%
+def - utilities - waste management	WCN	2026-01-18	69.47	4.57	5.0%	-6.0%	1.0%	-7.0%
+								
+def - insurance - diversified	BRK-B	2026-01-18	15.77	2.86	2.0%	17.0%	23.0%	17.0%
+def - insurance - diversified	AIG	2026-01-18	13.07	1.44	-6.0%	10.0%	N/A	7.0%
+								
+def - insurance - property & casualty	PGR	2026-01-18	11.09	1.39	14.0%	13.0%	N/A	12.0%
+def - insurance - property & casualty	ALL	2026-01-18	6.23	0.75	4.0%	240.0%	N/A	220.0%
+def - insurance - property & casualty	CB	2026-01-18	12.56	2.02	8.0%	30.0%	N/A	21.0%
+def - insurance - property & casualty	TRV	2026-01-18	10.59	1.24	5.0%	50.0%	N/A	50.0%
+def - insurance - property & casualty	HIG	2026-01-18	10.59	1.29	7.0%	38.0%	N/A	41.0%
+def - insurance - property & casualty	WRB	2026-01-18	14.26	1.76	11.0%	37.0%	N/A	40.0%
+def - insurance - property & casualty	GWRE	2026-01-18	150.77	10.63	27.0%	784.0%	440.0%	243.0%
+								
+def - insurance - brokers	AON	2026-01-18	27.54	4.32	7.0%	33.0%	N/A	34.0%
+def - insurance - brokers	AJG	2026-01-18	41.13	5.10	22.0%	-14.0%	N/A	-13.0%
+def - insurance - brokers	BRO	2026-01-18	24.01	4.99	35.0%	-2.0%	N/A	-3.0%
+def - insurance - brokers	ERIE	2026-01-18	23.03	3.26	7.0%	16.0%	N/A	14.0%
+								
+def - beverages - Non-alcohol	KO	2026-01-18	23.32	6.35	6.0%	24.0%	12.0%	30.0%
+def - beverages - Non-alcohol	PEP	2026-01-18	27.84	2.17	3.0%	-10.0%	-5.0%	-11.0%
+def - beverages - Non-alcohol	KDP	2026-01-18	23.62	2.30	11.0%	6.0%	3.0%	7.0%
+def - beverages - Non-alcohol	COKE	2026-01-18	23.44	1.83	7.0%	24.0%	10.0%	23.0%
+def - beverages - Non-alcohol	MNST	2026-01-18	44.50	9.58	17.0%	45.0%	41.0%	41.0%
+def - beverages - Non-alcohol	CELH	2026-01-18	598.35	6.60	173.0%	-1176.0%	-18192.0%	12520.0%
+def - beverages - Non-alcohol	PRMB	2026-01-18	NA	1.06	245.0%	28.0%	233.0%	-45.0%
+								
+def - packaged food	KHC	2026-01-18	NA	1.11	-2.0%	-385.0%	-14.0%	-312.0%
+def - packaged food	GIS	2026-01-18	9.61	1.26	-7.0%	-36.0%	-18.0%	-48.0%
+def - packaged food	MKC	2026-01-18	23.20	2.65	3.0%	1.0%	3.0%	1.0%
+def - packaged food	CPB	2026-01-18	13.49	0.77	-3.0%	-10.0%	-17.0%	-11.0%
+def - packaged food	PPC	2026-01-18	8.02	0.54	4.0%	-4.0%	-4.0%	-2.0%
+def - packaged food	POST	2026-01-18	18.11	0.63	12.0%	-26.0%	10.0%	-37.0%
+def - packaged food	BRBR	2026-01-18	14.25	1.22	17.0%	-15.0%	0.0%	-17.0%
+def - packaged food	FRPT	2026-01-18	28.13	2.91	14.0%	98.0%	57.0%	755.0%
+								
+def - farm products	ADM	2026-01-18	26.52	0.38	2.0%	36.0%	-33.0%	500.0%
+def - farm products	TSN	2026-01-18	44.27	0.38	2.0%	-86.0%	-40.0%	-87.0%
+def - farm products	CALM	2026-01-18	3.29	0.88	-19.0%	-53.0%	-41.0%	-53.0%
+def - farm products	VITL	2026-01-18	22.17	1.84	37.0%	112.0%	97.0%	120.0%
+								
+def - specialty retail	ORLY	2026-01-18	32.81	4.58	8.0%	9.0%	9.0%	9.0%
+def - specialty retail	AZO	2026-01-18	24.56	3.03	8.0%	-8.0%	-4.0%	-6.0%
+def - specialty retail	TSCO	2026-01-18	24.62	1.75	7.0%	6.0%	7.0%	7.0%
+def - specialty retail	DKS	2026-01-18	17.31	1.30	36.0%	-65.0%	-3.0%	-67.0%
+								
+healthcare - drug - general	LLY	2026-01-18	51.36	16.52	54.0%	355.0%	81.0%	475.0%
+healthcare - drug - general	JNJ	2026-01-18	21.10	5.72	7.0%	124.0%	28.0%	91.0%
+healthcare - drug - general	ABBV	2026-01-18	161.74	6.35	9.0%	-66.0%	10.0%	-89.0%
+healthcare - drug - general	MRK	2026-01-18	14.40	4.23	3.0%	65.0%	57.0%	83.0%
+healthcare - drug - general	AZN	2026-01-18	31.31	5.04	10.0%	74.0%	9.0%	74.0%
+healthcare - drug - general	AMGN	2026-01-18	25.54	4.96	13.0%	26.0%	14.0%	14.0%
+healthcare - drug - general	PFE	2026-01-18	14.95	2.32	-6.0%	-29.0%	7.0%	-21.0%
+healthcare - drug - general	BMY	2026-01-18	18.66	2.34	-1.0%	1679.0%		2957.0%
+healthcare - drug - general	GILD	2026-01-18	19.35	5.33	3.0%	281.0%	9.0%	144.0%
+								
+biotech	NVO	2026-01-18	18.16	4.50	12.0%	-21.0%	-7.0%	-22.0%
+biotech	VRTX	2026-01-18	31.11	9.54	12.0%	6.0%	12.0%	4.0%
+biotech	REGN	2026-01-18	17.55	5.41	1.0%	18.0%	-8.0%	9.0%
+biotech	MRNA	2026-01-18	NA	7.32	-45.0%	-990.0%	1056.0%	-1638.0%
+biotech	UTHR	2026-01-18	17.62	6.40	7.0%	13.0%	14.0%	10.0%
+								
+healthcare - diagnostics	TMO	2026-01-18	35.75	5.32	5.0%	5.0%	6.0%	-1.0%
+healthcare - diagnostics	ILMN	2026-01-18	31.74	5.05	0.0%	-69.0%	-52.0%	-79.0%
+								
+healthcare - healthcare plans	UNH	2026-01-18	17.27	0.69	12.0%	-58.0%	N/A	-61.0%
+healthcare - healthcare plans	CVS	2026-01-18	205.38	0.25	8.0%	-3416.0%	29.0%	-4669.0%
+healthcare - healthcare plans	ELV	2026-01-18	15.33	0.43	12.0%	2.0%	N/A	17.0%
+healthcare - healthcare plans	CI	2026-01-18	12.01	0.27	11.0%	93.0%	N/A	153.0%
+healthcare - healthcare plans	HUM	2026-01-18	25.61	0.26	11.0%	-79.0%	N/A	-59.0%
+healthcare - healthcare plans	OSCR	2026-01-18	NA	0.39	23.0%	166.0%	N/A	152.0%
+healthcare - healthcare plans	ALHC	2026-01-18	NA	1.24	44.0%	-114.0%	N/A	-114.0%
+								
+healthcare - hospital	HCA	2026-01-18	18.14	1.44	10.0%	27.0%	19.0%	29.0%
+healthcare - hospital	THC	2026-01-18	13.49	0.83	3.0%	-23.0%	13.0%	-28.0%
+healthcare - hospital	UHS	2026-01-18	9.50	0.73	13.0%	45.0%	27.0%	44.0%
+healthcare - hospital	DVA	2026-01-18	10.78	0.56	5.0%	-17.0%	-6.0%	-30.0%
+								
+healthcare - health informaction service	GEHC	2026-01-18	16.90	1.84	6.0%	-2.0%	-1.0%	-5.0%
+healthcare - health informaction service	VEEV	2026-01-18	43.18	11.86	16.0%	29.0%	33.0%	27.0%
+								
+healthcare - medical devices	ABT	2026-01-18	15.27	4.83	7.0%	12.0%	13.0%	-2.0%
+healthcare - medical devices	SYK	2026-01-18	47.77	5.71	10.0%	-1.0%	13.0%	3.0%
+healthcare - medical devices	BSX	2026-01-18	47.10	6.75	20.0%	40.0%	41.0%	61.0%
+healthcare - medical devices	MDT	2026-01-18	26.14	3.57	7.0%	2.0%	10.0%	8.0%
+healthcare - medical devices	EW	2026-01-18	35.91	8.32	15.0%	-14.0%	15.0%	-228.0%
+								
+healthcare - medical instruments	ISRG	2026-01-18	70.81	19.73	23.0%	27.0%	33.0%	25.0%
+healthcare - medical instruments	BDX	2026-01-18	35.53	2.70	8.0%	-6.0%	8.0%	17.0%
+healthcare - medical instruments	ALC	2026-01-18	37.54	3.84	7.0%	-3.0%	5.0%	-10.0%
+								
+Industry - industrial dis	GWW	2026-01-18	29.83	2.86	6.0%	-27.0%	-23.0%	-40.0%
+Industry - industrial dis	FAST	2026-01-18	41.01	6.28	12.0%	14.0%	12.0%	13.0%
+Industry - industrial dis	CNM	2026-01-18	25.68	1.47	1.0%	2.0%	-1.0%	3.0%
+								
+Industry - marine shipping	KEX	2026-01-18	23.36	2.06	5.0%	5.0%	3.0%	3.0%
+Industry - marine shipping	MATX	2026-01-18	11.14	1.35	-9.0%	-33.0%	-26.0%	-32.0%
+								
+Industry - specialty chemicals	LIN	2026-01-18	29.39	6.12	3.0%	14.0%	5.0%	24.0%
+Industry - specialty chemicals	SHW	2026-01-18	34.94	3.81	3.0%	4.0%	4.0%	3.0%
+Industry - specialty chemicals	ECL	2026-01-18	39.85	4.94	4.0%	-27.0%	10.0%	-21.0%
+								
+IT servies	IBM	2026-01-18	36.56	4.37	9.0%	-403.0%	26.0%	-628.0%
+IT servies	ACN	2026-01-18	23.66	2.49	6.0%	0.0%	6.0%	-3.0%
+IT servies	INFY	2026-01-18	24.05	3.90	3.0%	-10.0%	-11.0%	-7.0%
+IT servies	IT	2026-01-18	20.22	2.57	3.0%	-87.0%	-3.0%	-91.0%
+IT servies	EPAM	2026-01-18	32.45	2.22	19.0%	-24.0%	-14.0%	-22.0%
+IT servies	GLOB	2026-01-18	30.96	1.21	0.0%	-15.0%	3.0%	-24.0%
+								
+oil & gas integrated	XOM	2026-01-18	18.86	1.69	-4.0%	-16.0%	-5.0%	-12.0%
+oil & gas integrated	CVX	2026-01-18	23.47	1.79	-1.0%	-17.0%	13.0%	-21.0%
+oil & gas integrated	SHEL	2026-01-18	15.22	0.78	-6.0%	15.0%	4.0%	22.0%
+								

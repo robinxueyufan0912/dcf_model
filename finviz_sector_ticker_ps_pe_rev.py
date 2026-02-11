@@ -18,86 +18,106 @@ pd.set_option("display.width", None)
 from finvizfinance.quote import Statements, finvizfinance
 
 sector_to_tickers = {
-    "TMT - mag7": ["AAPL", "MSFT", "GOOG", "AMZN", "META", "TSLA"],
-    "TMT - e-commerce": ["UI", "SE", "CPNG"],
+    "crypto" : ["MSTR", "BMNR", "CRCL", "DJT"],
+    "misc": ["TEM"],
+    "TMT - mag7": ["AAPL", "MSFT", "GOOG", "AMZN", "META"],
+    "TMT - tsla": ["TSLA"],
+    "TMT - e-commerce": ["UI", ],
     "Luxury": [],
-    "TMT - consumer discretionary": [
-        "UBER", "DASH", "CART", "SHOP", "EBAY", "ETSY", "NFLX",
-        "DIS", "SPOT", "RBLX", "RDDT", "PINS", "SNAP", "MTCH",
-        "APP", "TTD", "ROKU", "U", "DUOL", "COUR", "RKT",
-        "Z", "IOT", 
-    ],
-    "TMT - cybersecurity": [
-        "PANW", "CRWD", "FTNT", "ZS", "NET", "CYBR", "OKTA", "RBRK", "CVLT", "NTNX", 
-        "SNOW", "MDB", "DDOG", "DT", 
-        ],
+    "TMT - cons disc - Mobility/Delivery": ["UBER", "DASH", "CART", ],
+    "TMT - cons disc - E-comm": ["SHOP", "EBAY", "ETSY", "SE", "CPNG"],
+    "TMT - cons disc - entertain": ["NFLX","DIS", "SPOT"],
+    "TMT - cons disc - social": ["RBLX", "RDDT", "PINS", "SNAP", "MTCH",],
+    "TMT - cons disc - adtech": ["APP", "TTD", "ROKU", "U", ],
+    "TMT - cons disc - edu": ["DUOL", "COUR", ],
+    "TMT - cons disc - realestate": ["RKT","Z", ],
+    "TMT - cons disc - misc": ["IOT",],
+    "TMT - cybersecurity": ["PANW", "CRWD", "FTNT", "ZS", "NET", "CYBR", "OKTA", "RBRK", "CVLT", "NTNX", ],
+    "TMT - Data/Infra/Observability":["SNOW", "MDB", "DDOG", "DT", ],
     "TMT - devops": ["GTLB", "FROG", "DBX",],
-    "TPU": ["WULF", "CIFR", "GOOG", "AVGO", "TSM", "TTMI", "FLEX", "CLS", "MRVL", "APH", "LITE", "ADI", "FN", "VICR"],
     "data center": ["NOK", ],
-    "data center - hyper scaler": ["ORCL", "CRWV", "NBIS", "IREN", "CIFR", ],
-    "data center - semi": ["NVDA", "MU", "AVGO", "AMD"],
+    "data center - hyper scaler": ["ORCL", "CRWV", "NBIS", "IREN", "WULF", "CIFR", ],
+    "data center - semi chip": ["NVDA", "MU", "AVGO", "AMD"],
+    "data center - semi equip": [ "ASML", "LRCX", "AMAT", "KLAC", ],
+    "data center - semi equip for test": ["TER", "COHU", "KLIC"],
     "data center - package":["TSM", "ASX", "AMKR",],
-    "data center - test":["TER", ],
+    "data center - PCB": ["TTMI",],
+    "data center - rack manufacture": ["CLS","FLEX",],
     "data center - router" :["ANET", "MRVL", ],
-    "data center - optics" :[ "CRDO", "MTSI", "SMTC", "COHR", "CIEN", "CSCO", "GLW", ],
+    "data center - optics" :[ "CRDO", "MTSI", "SMTC", "LITE","COHR", "FN", "CIEN", "CSCO", "ADI", "APH","GLW",],
     "data center - NAND/SSD": ["STX", "WDC", "SNDK"],
-    "data center - semi equip": [ "ASML", "LRCX", "KLAC", ],
     "data center - server":[ "DELL", "SMCI"],
-    "data center - PDU":["MPWR", "NVT", "VRT", "ETN", ],
-    "data center - onsite power generator":[ "CAT", "CMI", "BE",],
-    "data center - construction builder":["EME", "FIX",],
-    "data center - medium volt transformer":["POWL", "GEV", "PWR",],
-    "data center - new IPP":["TLN", "BWXT", "OKLO", "SMR",],
+    "data center - 板级DC-DC(48VDC->6VDC->VRM->1VDC for GPU/CPU)": ["MPWR","VICR"],
+    "data center - 服务器电源(PowerShelf/Front-End PSU/415VAC->48VDC架构)": ["AEIS"], #"FLEX",
+    # "data center - UPS": ["VRT", "ETN", "FLEX"],
+    "data center - 机房配电UPS/PDU(415VAC->415VAC)": ["NVT", "ETN","VRT","POWL"],
+    "data center - (34.5/13.8/4.16kVAC->415VAC": ["ETN" ,"HUBB"],
+    "data center - UPS battery": ["ENS", "FLNC",],
+    "data center - construction builder":["EME", "FIX","URI",],
+    "data center - onsite power generator":[ "CAT", "GEV", "CMI", "FTAI","BE",], #ROLLS ROYCE, WARTSILA
+    "data center - 电网侧≥115kV, 115kV->34.5kV":[ "PWR", "MYRG"], #SIEMENS ENERGY #Turbine #HV transformer
+    "data center - new IPP":["TLN", "OKLO", "SMR",],
     "data center - IPP": ["CEG", "VST", "NRG",],
-    "data center - uranium": ["URI", "CCJ", "UEC", "LEU", ],
+    "data center - uranium": [ "CCJ", "UEC", "LEU", ],
     "data center - HVAC":[ "TT", "CARR", "JCI", "SPXC"],
+    # BHP/RIO/VALE general material mining include copper
+    # SCCO/FCX copper specialist
+    # AA aluminum specialist
+    # ALB/LAC lithium specialist   
+    "material - steel/copper/aluminum/lithium": ["NUE", "STLD", "CLF", "BHP", "RIO", "VALE", "SCCO", "FCX", "TMQ", "AA", "CENX", "ALB", "LAC"], #铜做变压器/电缆导体，铝做车身(便宜导电体)，锂做电池
+    "aerospace - & defense":["RKLB","DXYZ","FLY", "LUNR", "RDW", "PL","PLTR", "KTOS", "AVAV", "ONDS", "RTX", "LMT", "NOC","LHX", "MOG-A", "GD", "HII", "CW", "BWXT", "LDOS", "BAH", "CACI", "USAS", "ALM", "UAMY", ],
+    "material - rare earth(永磁体)": ["CRS", "MP","USAR","EMAT", "METC", "CRML", ], #电机/风电/机器人需要永磁，稀土为 Nd Pr + Dy/Tb
     "chips": ["QCOM", "INTC", "ARM"],
-    "robotic": ["PH", "ALNT", "ROK", "SNPS", "SYM", "ATI"],
-    "rare earth": ["MP", "CRML"],
-    "material": ["AA", "SCCO", "ALB", "LAC", "FLNC"], # aluminum, copper, lithium   
+    "robotic": ["MOG-A", "ALNT", "ROK", "SNPS", "SYM", ], # ATI做钛金属
+    # GE FTAI HEI 发动机; HWM 发动机+机身 元件; PH TDG 机身/系统件售后; BA整机
+    "aerospace - aftermarket": ["GE", "FTAI", "HEI", "HWM", "PH", "TDG", "CRS", "ATI","BA",], 
     "quatum": ["IBM", "IONQ", "RGTI"],
-    "TMT - SAAS" : ["ORCL", "SAP", "CRM", "NOW", "ADBE", "INTU", "ADP", "WDAY", "ADSK", "TEAM", "HUBS", "TWLO", "ZM", "DOCU", "BILL", "GDDY", "WIX", "PATH"],
+    "TMT - SAAS" : ["SAP", "CRM", "NOW", "ADBE", "INTU", "ADP", "WDAY", "ADSK", "TEAM", "HUBS", "TWLO", "ZM", "DOCU", "BILL", "GDDY", "WIX", "PATH"],
+    "CN" : ["BABA", "NIO"],
     "Fin - bank" : ["JPM", "BAC", "C", "BK", "MS", "GS"],
     "Fin - credit": ["AXP", "COF", "AFRM", "KLAR", "SOFI", "UPST", "FICO"],
     "Fin - payment": ["V", "MA", "FISV", "PYPL", "XYZ", "TOST"],
     "Fin - broker": ["SCHW", "IBKR", "HOOD", "COIN"],
-    "farm machinery" : ["DE", "PCAR"],
-    "aerospace & defense":["PLTR", "KTOS", "AVAV", "ONDS", "RTX", "LMT", "NOC", "GD", "HII", "CW", "BWXT", "LDOS", "BAH", "CACI"],
-    "aerospace aftermarket": ["BA", "GE", "HWM", "TDG", "HEI", "CRS", "FTAI"],
-    "police equipment": ["MSI", "AXON"],
-    "auto manufactueres" :["TSLA", "RACE", "GM", "F", "CPRT"],
-    "residential construction": ["DHI", "TOL", "KBH", "BLD", "IBP"],
-    "home improvement retial": ["HD", "LOW", "BLDR", "W", "WSM"],
-    "loging": ["MAR", "HLT", "H"],
-    "airline": ["DAL", "UAL", "LUV", "AAL"],
-    "resort & casinos": ["LVS", "WYNN", "MGM", "CZR"],
-    "travel service": ["BKNG", "ABNB", "RCL", "EXPE", "MMYT", "YOU"],
-    "gambling": ["FLUT", "DKNG"],
-    "restaurants": ["MCD", "SBUX", "CMG", "DRI", "DPZ", "TXRH", "WING", "CAVA", "SG"],
-    "apparel" :["TJX", "NKE", "RL", "AS", "LULU", "ONON", "DECK", "VFC", "CROX", "GOOS"],
-    "telecom service": ["TMUS", "VZ", "T", "CMCSA", "ERIC"], 
-    "discount stores": ["WMT", "COST", "TGT", "SFM"],
-    "household & personal products": ["PG", "PM", "UL", "CL", "KMB", "KVUE", "ULTA", "ELF", "HIMS"],
-    "utilities - regulated electric": ["NEE", "SO", "DUK","AEP","D","PEG","PCG","HE"],
-    "utilities - waste management": ["WM", "RSG", "WCN"],
-    "insurance - diversified": ["BRK-B", "AIG"],
-    "insurance - property & casualty": ["PGR", "ALL", "CB","TRV", "HIG", "WRB", "GWRE"],
-    "insurance - brokers": ["AON", "AJG", "BRO", "ERIE"],
-    "beverages - Non-alcohol": ["KO", "PEP", "KDP", "COKE", "MNST", "CELH", "PRMB"],
-    "packaged food": ["KHC", "GIS", "MKC", "CPB", "PPC", "POST", "BRBR" , "FRPT"],
-    "farm products": ["ADM", "TSN", "CALM", "VITL"],
-    "specialty retail": ["ORLY", "AZO", "TSCO", "DKS"],
-    "drug - general": ["LLY", "JNJ", "ABBV", "MRK", "AZN", "AMGN", "PFE","BMY", "GILD"],
+    "Fin - asset manage": ["BLK", "BX", "KKR", "BN", "APO", "SSNC", "CWAN"],
+    "Fin - mm" : ["VIRT"], 
+    "Fin - data & stock exchange": ["ICE", "NDAQ", "CME", "CBOE", "MRX", "SPGI", "MSCI", "MCO", "TW", "MKTX"],
+    "Industry - farm machinery" : ["DE", "PCAR"],
+    "Industry - police equipment": ["MSI", "AXON"],
+    "Industry - auto manufactueres" :["RACE", "GM", "F", "CPRT"],
+    "home building - residential construction": ["DHI", "TOL", "KBH", "BLD", "IBP"],
+    "home building - material": ["CRH", "MLM", "VMC"],
+    "home building - home improvement retial": ["HD", "LOW", "BLDR", "W", "WSM"],
+    "cons disc - loging": ["MAR", "HLT", "H"],
+    "cons disc - airline": ["DAL", "UAL", "LUV", "AAL"],
+    "cons disc - resort & casinos": ["LVS", "WYNN", "MGM", "CZR"],
+    "cons disc - travel service": ["BKNG", "ABNB", "RCL", "EXPE", "MMYT", "YOU"],
+    "cons disc - gambling": ["FLUT", "DKNG"],
+    "cons disc - restaurants": ["MCD", "SBUX", "CMG", "DRI", "DPZ", "TXRH", "WING", "CAVA", "SG"],
+    "cons disc - apparel" :["TJX", "NKE", "RL", "AS", "LULU", "ONON", "DECK", "VFC", "CROX", "GOOS"],
+    "def - telecom service": ["TMUS", "VZ", "T", "CMCSA", "ERIC"], 
+    "def - staples - discount stores": ["WMT", "COST", "TGT", "SFM"],
+    "def - staples - household & personal products": ["PG", "UL", "CL", "KMB", "KVUE", "ULTA", "ELF", "HIMS"],
+    "def - staples - tobacco": [ "PM", "MO", "MDLZ"],
+    "def - staples - beverages - Non-alcohol": ["KO", "PEP", "KDP", "COKE", "MNST", "CELH", "PRMB"],
+    "def - utilities - regulated electric": ["NEE", "SO", "DUK","AEP","D","PEG","PCG","HE"],
+    "def - utilities - waste management": ["WM", "RSG", "WCN"],
+    "def - insurance - diversified": ["BRK-B", "AIG"],
+    "def - insurance - property & casualty": ["PGR", "ALL", "CB","TRV", "HIG", "WRB", "GWRE"],
+    "def - insurance - brokers": ["AON", "AJG", "BRO", "ERIE"],
+    "def - staples - packaged food": ["KHC", "GIS", "MKC", "CPB", "PPC", "POST", "BRBR" , "FRPT"],
+    "def - staples - farm products": ["ADM", "TSN", "CALM", "VITL"],
+    "def - specialty retail": ["ORLY", "AZO", "TSCO", "DKS"],
+    "healthcare - drug - general": ["LLY", "JNJ", "ABBV", "MRK", "AZN", "AMGN", "PFE","BMY", "GILD"],
     "biotech": ["NVO", "VRTX", "REGN", "MRNA", "UTHR"],
-    "diagnostics" : ["TMO", "ILMN"],
-    "healthcare plans": ["UNH", "CVS", "ELV", "CI", "HUM", "OSCR", "ALHC"],
-    "hospital": ["HCA", "THC", "UHS", "DVA"],
-    "health informaction service": ["GEHC", "VEEV"],
-    "medical devices": ["ABT", "SYK", "BSX", "MDT", "EW"],
-    "medical instruments": ["ISRG", "BDX", "ALC"],
-    "industrial dis": ["GWW", "FAST", "CNM"],
-    "marine shipping": ["KEX", "MATX"],
-    "specialty chemicals": ["LIN", "SHW", "ECL"],
+    "healthcare - diagnostics" : ["TMO", "ILMN"],
+    "healthcare - healthcare plans": ["UNH", "CVS", "ELV", "CI", "HUM", "OSCR", "ALHC"],
+    "healthcare - hospital": ["HCA", "THC", "UHS", "DVA"],
+    "healthcare - health informaction service": ["GEHC", "VEEV"],
+    "healthcare - medical devices": ["ABT", "SYK", "BSX", "MDT", "EW"],
+    "healthcare - medical instruments": ["ISRG", "BDX", "ALC"],
+    "Industry - industrial dis": ["GWW", "FAST", "CNM"],
+    "Industry - marine shipping": ["KEX", "MATX"],
+    "Industry - specialty chemicals": ["LIN", "SHW", "ECL"],
     "IT servies": ["IBM", "ACN", "INFY", "IT", "EPAM", "GLOB"],
     "oil & gas integrated": ["XOM", "CVX", "SHEL"],
 }
@@ -130,7 +150,7 @@ def norm(x: str | None) -> str:
         return "NA"
     return x
 
-def fetch_pe_ps(session: requests.Session, ticker: str, sleep_s: float = 0.15) -> tuple[str, str, str]:
+def fetch_pe_ps_evebitda(session: requests.Session, ticker: str, sleep_s: float = 0.15) -> tuple[str, str, str, str]:
     url = FINVIZ.format(ticker)
     try:
         r = session.get(url, headers=HEADERS, timeout=25)
@@ -139,8 +159,9 @@ def fetch_pe_ps(session: requests.Session, ticker: str, sleep_s: float = 0.15) -
         m = parse_snapshot_metrics(r.text)
         pe = norm(m.get("P/E"))
         ps = norm(m.get("P/S"))
+        evebitda = norm(m.get("EV/EBITDA"))
         time.sleep(sleep_s)  # be nice to the site
-        return ticker, pe, ps
+        return ticker, pe, ps, evebitda
     except Exception:
         return ticker, "NA", "NA"
 
@@ -236,6 +257,7 @@ def main():
         "sector",
         "ticker",
         "date",
+        "TTM EV/EBITDA",
         "TTM P/E (GAAP)",
         "TTM P/S (GAAP)",
         "rev yoy%",
@@ -255,12 +277,13 @@ def main():
         for sector, tickers in sector_to_tickers.items():
             for t in tickers:
                 print(t)
-                ticker, pe, ps = fetch_pe_ps(s, t)
+                ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
                 rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
                 rows.append({
                     "sector" : sector,
                     "ticker": ticker,
                     "date": asof,
+                    "TTM EV/EBITDA": evebitda,
                     "TTM P/E (GAAP)": pe,
                     "TTM P/S (GAAP)": ps,
                     "rev yoy%": rev_yoy,
