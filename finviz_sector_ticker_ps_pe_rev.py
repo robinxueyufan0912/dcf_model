@@ -44,7 +44,7 @@ sector_to_tickers = {
     "data center - PCB": ["TTMI",],
     "data center - rack manufacture": ["CLS","FLEX",],
     "data center - router" :["ANET", "MRVL", ],
-    "data center - optics" :[ "CRDO", "MTSI", "SMTC", "LITE","COHR", "FN", "CIEN", "CSCO", "ADI", "APH","GLW",],
+    "data center - optics" :[ "CRDO", "MTSI", "SMTC", "LITE","COHR", "FN", "CIEN", "CSCO", "ADI", "TXN", "APH","TEL","GLW",],
     "data center - NAND/SSD": ["STX", "WDC", "SNDK"],
     "data center - server":[ "DELL", "SMCI"],
     "data center - 板级DC-DC(48VDC->6VDC->VRM->1VDC for GPU/CPU)": ["MPWR","VICR"],
@@ -69,7 +69,8 @@ sector_to_tickers = {
     "material - rare earth(永磁体)": ["CRS", "MP","USAR","EMAT", "METC", "CRML", ], #电机/风电/机器人需要永磁，稀土为 Nd Pr + Dy/Tb
     "chips": ["QCOM", "INTC", "ARM"],
     "robotic": ["MOG-A", "ALNT", "ROK", "SNPS", "SYM", ], # ATI做钛金属
-    # GE FTAI HEI 发动机; HWM 发动机+机身 元件; PH TDG 机身/系统件售后; BA整机
+    # GE FTAI HEI 发动机; HWM 发动机+机身元件; PH TDG 机身/系统件售后; BA整机
+    # HEI是替代件(零件)+维修+分销， TDG是专有件+认证+供应链装配
     "aerospace - aftermarket": ["GE", "FTAI", "HEI", "HWM", "PH", "TDG", "CRS", "ATI","BA",], 
     "quatum": ["IBM", "IONQ", "RGTI"],
     "TMT - SAAS" : ["SAP", "CRM", "NOW", "ADBE", "INTU", "ADP", "WDAY", "ADSK", "TEAM", "HUBS", "TWLO", "ZM", "DOCU", "BILL", "GDDY", "WIX", "PATH"],
