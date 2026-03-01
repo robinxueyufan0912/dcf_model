@@ -14,3 +14,24 @@ Traceback (most recent call last):
   File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 640, in _safe_read
     raise IncompleteRead(data, amt-len(data))
 http.client.IncompleteRead: IncompleteRead(323 bytes read, 13429 more expected)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)

@@ -32,7 +32,7 @@ sector_to_tickers = {
     "TMT - cons disc - edu": ["DUOL", "COUR", ],
     "TMT - cons disc - realestate": ["RKT","Z", ],
     "TMT - cons disc - misc": ["IOT",],
-    "TMT - cybersecurity": ["PANW", "CRWD", "FTNT", "ZS", "NET", "CYBR", "OKTA", "RBRK", "CVLT", "NTNX", ],
+    "TMT - cybersecurity": ["PANW", "CRWD", "FTNT", "ZS", "NET",  "OKTA", "RBRK", "CVLT", "NTNX", ],
     "TMT - Data/Infra/Observability":["SNOW", "MDB", "DDOG", "DT", ],
     "TMT - devops": ["GTLB", "FROG", "DBX",],
     "data center": ["NOK", ],
@@ -53,8 +53,8 @@ sector_to_tickers = {
     "data center - 机房配电UPS/PDU(415VAC->415VAC)": ["NVT", "ETN","VRT","POWL"],
     "data center - (34.5/13.8/4.16kVAC->415VAC": ["ETN" ,"HUBB"],
     "data center - UPS battery": ["ENS", "FLNC",],
-    "data center - construction builder":["EME", "FIX","URI",],
     "data center - onsite power generator":[ "CAT", "GEV", "CMI", "FTAI","BE",], #ROLLS ROYCE, WARTSILA
+    "data center - construction builder":["EME", "FIX","URI",],
     "data center - 电网侧≥115kV, 115kV->34.5kV":[ "PWR", "MYRG"], #SIEMENS ENERGY #Turbine #HV transformer
     "data center - new IPP":["TLN", "OKLO", "SMR",],
     "data center - IPP": ["CEG", "VST", "NRG",],
@@ -65,18 +65,19 @@ sector_to_tickers = {
     # AA aluminum specialist
     # ALB/LAC lithium specialist   
     "material - steel/copper/aluminum/lithium": ["NUE", "STLD", "CLF", "BHP", "RIO", "VALE", "SCCO", "FCX", "TMQ", "AA", "CENX", "ALB", "LAC"], #铜做变压器/电缆导体，铝做车身(便宜导电体)，锂做电池
-    "aerospace - & defense":["RKLB","DXYZ","FLY", "LUNR", "RDW", "PL","PLTR", "KTOS", "AVAV", "ONDS", "RTX", "LMT", "NOC","LHX", "MOG-A", "GD", "HII", "CW", "BWXT", "LDOS", "BAH", "CACI", "USAS", "ALM", "UAMY", ],
+    # KTOS hypersonic missile; AVAV手持侦查无人机; 
+    "aerospace - & defense":["RKLB","DXYZ","FLY", "LUNR", "RDW", "PL","PLTR", "KTOS", "AVAV", "RTX", "LMT", "NOC","LHX", "MOG-A", "ALNT", "GD", "HII", "CW", "BWXT", "LDOS", "BAH", "CACI", "USAS", "ALM", "UAMY", ],
+    # GE FTAI HEI是PMA原厂平替配件; TDG是专有件+垄断小型配件; 
+    # ATI大型钛/镍合金+飞机蒙皮或军工装甲; CRS小型钛/镍合金+航空紧固件; HWM发动机单晶涡轮叶片; PH刹车液压系统; BA整机
+    "aerospace - aftermarket": ["GE", "FTAI", "HEI","ATI", "CRS", "HWM", "PH", "TDG", "BA",], 
     "material - rare earth(永磁体)": ["CRS", "MP","USAR","EMAT", "METC", "CRML", ], #电机/风电/机器人需要永磁，稀土为 Nd Pr + Dy/Tb
     "chips": ["QCOM", "INTC", "ARM"],
     "robotic": ["MOG-A", "ALNT", "ROK", "SNPS", "SYM", ], # ATI做钛金属
-    # GE FTAI HEI 发动机; HWM 发动机+机身元件; PH TDG 机身/系统件售后; BA整机
-    # HEI是替代件(零件)+维修+分销， TDG是专有件+认证+供应链装配
-    "aerospace - aftermarket": ["GE", "FTAI", "HEI", "HWM", "PH", "TDG", "CRS", "ATI","BA",], 
     "quatum": ["IBM", "IONQ", "RGTI"],
     "TMT - SAAS" : ["SAP", "CRM", "NOW", "ADBE", "INTU", "ADP", "WDAY", "ADSK", "TEAM", "HUBS", "TWLO", "ZM", "DOCU", "BILL", "GDDY", "WIX", "PATH"],
     "CN" : ["BABA", "NIO"],
     "Fin - bank" : ["JPM", "BAC", "C", "BK", "MS", "GS"],
-    "Fin - credit": ["AXP", "COF", "AFRM", "KLAR", "SOFI", "UPST", "FICO"],
+    "Fin - credit": ["AXP", "COF", "SOFI", "AFRM", "KLAR", "UPST", "FICO"],
     "Fin - payment": ["V", "MA", "FISV", "PYPL", "XYZ", "TOST"],
     "Fin - broker": ["SCHW", "IBKR", "HOOD", "COIN"],
     "Fin - asset manage": ["BLK", "BX", "KKR", "BN", "APO", "SSNC", "CWAN"],
