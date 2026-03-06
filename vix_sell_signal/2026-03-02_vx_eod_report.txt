@@ -12,7 +12,6 @@
 {'contract_month': '2025-01', 'vx_symbol_2y': 'VXF25', 'final_settlement': '2025-01-22'}
 {'contract_month': '2025-02', 'vx_symbol_2y': 'VXG25', 'final_settlement': '2025-02-19'}
 /trade_date to VXCurrent contract month:
-2026-02-13 -> 2026-02
 2026-02-17 -> 2026-02
 2026-02-18 -> 2026-02
 2026-02-19 -> 2026-03
@@ -22,6 +21,7 @@
 2026-02-25 -> 2026-03
 2026-02-26 -> 2026-03
 2026-02-27 -> 2026-03
+2026-03-02 -> 2026-03
 /vxcurrent sell signal, 1) volume_pct>90, 2) count(last5daysVolPct>90)>=3 or count(last10daysVolPct>90)>=3:
      Trade Date       Futures   Open   High    Low  Close   Settle   Change  Total Volume   EFP  Open Interest  Close_MA20  Volume_MA50  Volume/MA50  volume_pct  volume_pct_ge90_count_last_5  volume_pct_ge90_count_last_10  SELL
 524  2023-03-13  H (Mar 2023)  23.95  28.40  22.40  25.10  25.3724   1.1916        204022   864          91311     21.0435     88663.96     2.301070   99.000000                           3.0                            3.0  True
@@ -138,7 +138,7 @@
 52  2025-04-08 -0.689175 -0.689175  -0.689175  -0.689175  -0.689175  -0.689175  -0.689175
 53  2025-04-09 -6.260514 -6.260514  -6.510473  -6.510473  -6.510473  -6.510473  -6.510473
 54  2026-02-05  0.269769  0.269769  -0.336844  -0.336844        NaN        NaN        NaN
-55  2026-02-13 -0.887485 -0.887485        NaN        NaN        NaN        NaN        NaN
+55  2026-02-13 -0.887485 -0.887485  -0.887485        NaN        NaN        NaN        NaN
 /vxcurrent this month:
      Trade Date       Futures   Open   High    Low  Close   Settle  Change  Total Volume  EFP  Open Interest  Close_MA20  Volume_MA50  Volume/MA50  volume_pct  volume_pct_ge90_count_last_5  volume_pct_ge90_count_last_10   SELL
 1253 2026-02-06  G (Feb 2026)  21.35  22.15  18.95  19.14  19.1365 -1.7110        135772  525         102613     18.2535     86138.06     1.576214   86.000000                           2.0                            3.0  False
@@ -156,7 +156,7 @@
 1265 2026-02-25  H (Mar 2026)  20.30  20.44  19.30  19.30  19.4492 -0.8032         85847   25         180958     19.5810     89600.56     0.958108   50.666667                           0.0                            1.0  False
 1266 2026-02-26  H (Mar 2026)  19.40  20.65  19.28  19.98  19.7561  0.3069        125366   24         174670     19.6600     89635.06     1.398627   82.666667                           0.0                            1.0  False
 1267 2026-02-27  H (Mar 2026)  20.00  21.21  19.85  20.55  20.6361  0.8800        144082   27         167039     19.7500     90812.64     1.586585   88.000000                           0.0                            1.0  False
-Today is 2026-03-01, vxcurrent sell signal: 
+Today is 2026-03-02, vxcurrent sell signal: 
 - today's volume_pct>=90
 - volume_pct_ge90_count_last_5>=3 or volume_pct_ge90_count_last_10>=3
 /imessage:
@@ -172,4 +172,4 @@ Today is 2026-03-01, vxcurrent sell signal:
 | 02-25 | Mar/26 | 19.3 | -0.8  | 85k  | 0.96 | 50.67 | 0     | 1      | N    |
 | 02-26 | Mar/26 | 20.0 | 0.31  | 125k | 1.4  | 82.67 | 0     | 1      | N    |
 | 02-27 | Mar/26 | 20.6 | 0.88  | 144k | 1.59 | 88    | 0     | 1      | N    |
-Today is 2026-03-01
+Today is 2026-03-02

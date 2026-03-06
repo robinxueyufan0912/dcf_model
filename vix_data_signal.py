@@ -831,7 +831,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     # summary.to_csv("spx_eventstudy_summary.csv", index=False)
 
     print("/vxcurrent this month:")
-    print(df_vxcurrent_hlocv_features.tail(10))
+    print(df_vxcurrent_hlocv_features.tail(15))
     print(
         f"Today is {end_date}, vxcurrent sell signal: \n"
         "- today's volume_pct>=90\n"

@@ -35,3 +35,10 @@ Traceback (most recent call last):
     ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
     ^^^^^^^^^^^^^^^^^^^^^^^^
 ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
