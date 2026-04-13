@@ -42,3 +42,892 @@ Traceback (most recent call last):
     ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
     ^^^^^^^^^^^^^^^^^^^^^^^^
 ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+ConnectionResetError: [Errno 54] Connection reset by peer
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+urllib3.exceptions.ProtocolError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 486, in get_statements
+    website = requests.get(url, headers=headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 659, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 294, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+http.client.RemoteDisconnected: Remote end closed connection without response
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 294, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+urllib3.exceptions.ProtocolError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 486, in get_statements
+    website = requests.get(url, headers=headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 659, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 294, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+http.client.RemoteDisconnected: Remote end closed connection without response
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 294, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+urllib3.exceptions.ProtocolError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 486, in get_statements
+    website = requests.get(url, headers=headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 659, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 294, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+http.client.RemoteDisconnected: Remote end closed connection without response
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 294, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+urllib3.exceptions.ProtocolError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 486, in get_statements
+    website = requests.get(url, headers=headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 659, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 487, in get_statements
+    website.raise_for_status()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 503 Server Error: Service Unavailable for url: https://finviz.com/api/statement.ashx?t=AMZN&s=IQ
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 492, in get_statements
+    raise Exception(err)
+Exception: 503 Server Error: Service Unavailable for url: https://finviz.com/api/statement.ashx?t=AMZN&s=IQ
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+ConnectionResetError: [Errno 54] Connection reset by peer
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+urllib3.exceptions.ProtocolError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 486, in get_statements
+    website = requests.get(url, headers=headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 659, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 872, in <module>
+    run_vx_eod_report(end_date)
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 807, in run_vx_eod_report
+    spx_ohlc = load_spx_ohlc_stooq(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 375, in load_spx_ohlc_stooq
+    df = read_csv_over_https(url, verify_ssl=verify_ssl, cafile=cafile)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 358, in read_csv_over_https
+    return pd.read_csv(BytesIO(data))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 1898, in _make_engine
+    return mapping[engine](f, **self.options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 93, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/parsers.pyx", line 581, in pandas._libs.parsers.TextReader.__cinit__
+pandas.errors.EmptyDataError: No columns to parse from file
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 872, in <module>
+    run_vx_eod_report(end_date)
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 807, in run_vx_eod_report
+    spx_ohlc = load_spx_ohlc_stooq(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 375, in load_spx_ohlc_stooq
+    df = read_csv_over_https(url, verify_ssl=verify_ssl, cafile=cafile)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 358, in read_csv_over_https
+    return pd.read_csv(BytesIO(data))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 1898, in _make_engine
+    return mapping[engine](f, **self.options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 93, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/parsers.pyx", line 581, in pandas._libs.parsers.TextReader.__cinit__
+pandas.errors.EmptyDataError: No columns to parse from file
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 872, in <module>
+    run_vx_eod_report(end_date)
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 772, in run_vx_eod_report
+    download_cboe_vx_csvs(cboe_vx_futures_hlocv_data)
+  File "/Users/yxue/workspace/dcf_model/vix_data_signal.py", line 226, in download_cboe_vx_csvs
+    out_path.write_bytes(resp.read())
+                         ^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 489, in read
+    s = self._safe_read(self.length)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/client.py", line 640, in _safe_read
+    raise IncompleteRead(data, amt-len(data))
+http.client.IncompleteRead: IncompleteRead(332 bytes read, 15448 more expected)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+ConnectionResetError: [Errno 54] Connection reset by peer
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+urllib3.exceptions.ProtocolError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 486, in get_statements
+    website = requests.get(url, headers=headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 659, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+ConnectionResetError: [Errno 54] Connection reset by peer
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+               ^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+urllib3.exceptions.ProtocolError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 283, in main
+    rev_yoy, ebit_yoy, net_income_yoy, ebitda_yoy, rev_qoq, ebit_qoq, net_income_qoq, ebitda_qoq = fetch_rev_ebit(t)
+                                                                                                   ^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 232, in fetch_rev_ebit
+    df_is_q = s.get_statements(ticker, statement="I", timeframe="Q")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/finvizfinance/quote.py", line 486, in get_statements
+    website = requests.get(url, headers=headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yxue/workspace/dcf_model/.venv/lib/python3.11/site-packages/requests/adapters.py", line 659, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))
+Traceback (most recent call last):
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 316, in <module>
+    main()
+  File "/Users/yxue/workspace/dcf_model/finviz_sector_ticker_ps_pe_rev.py", line 282, in main
+    ticker, pe, ps, evebitda = fetch_pe_ps_evebitda(s, t)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)

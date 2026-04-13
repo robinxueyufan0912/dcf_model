@@ -318,24 +318,18 @@ def add_volume_metrics_rows_incl_today_strict(
     out = out.reset_index(drop=True)
     return out
 
-
-from io import BytesIO
-from pathlib import Path
-
-import pandas as pd
+from io import StringIO
 
 
-def read_csv_over_https(
+def read_text_over_https(
     url: str,
     *,
     verify_ssl: bool = True,
     cafile: str | None = None,
     timeout: int = 30,
-) -> pd.DataFrame:
+) -> str:
     """
-    Read CSV from https URL with custom SSL context.
-    - verify_ssl=False: 跳过证书校验（不安全，但能绕过公司自签证书拦截）
-    - cafile: 指定 CA bundle（推荐把公司根证书 + certifi 合并到一个 pem）
+    Read text from https URL with custom SSL context.
     """
     if not verify_ssl:
         ctx = ssl._create_unverified_context()
@@ -351,11 +345,167 @@ def read_csv_over_https(
 
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "Mozilla/5.0"},  # 有些站点会拒绝无UA请求
+        headers={"User-Agent": "Mozilla/5.0"},
     )
     with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+        final_url = resp.geturl()
         data = resp.read()
-    return pd.read_csv(BytesIO(data))
+
+    if not data.strip():
+        raise ValueError(f"Empty response while reading text from {final_url}")
+    return data.decode("utf-8", errors="replace")
+
+
+def parse_stooq_history_html(html_text: str) -> pd.DataFrame:
+    """
+    Extract the actual price-history table from a Stooq historical-data page.
+    """
+    required_cols = {"Date", "Open", "High", "Low", "Close"}
+    date_pattern = r"\d{1,2} [A-Za-z]{3} \d{4}"
+    best_df: pd.DataFrame | None = None
+    best_rows = -1
+
+    for table in pd.read_html(StringIO(html_text)):
+        cols = {str(col) for col in table.columns}
+        if not required_cols.issubset(cols):
+            continue
+
+        candidate = table.copy()
+        candidate = candidate[
+            candidate["Date"]
+            .astype(str)
+            .str.fullmatch(date_pattern, na=False)
+        ]
+        if candidate.empty:
+            continue
+
+        keep_cols = ["Date", "Open", "High", "Low", "Close"]
+        if "Volume" in candidate.columns:
+            keep_cols.append("Volume")
+        candidate = candidate[keep_cols]
+
+        if len(candidate) >= best_rows:
+            best_df = candidate
+            best_rows = len(candidate)
+
+    if best_df is None:
+        raise ValueError("Unable to locate SPX price table in Stooq HTML page.")
+
+    return best_df.reset_index(drop=True)
+
+
+def extract_stooq_last_page(html_text: str) -> int:
+    """
+    Extract the last pagination page number from a Stooq historical-data page.
+    """
+    page_nums = [
+        int(page)
+        for page in re.findall(r"q/d/\?s=[^&]+&i=d&l=(\d+)", html_text, flags=re.IGNORECASE)
+    ]
+    return max(page_nums, default=1)
+
+
+def normalize_spx_ohlc(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalize OHLC data from cached CSV or Stooq HTML table.
+    """
+    df = df.copy()
+
+    required_cols = {"Date", "Open", "High", "Low", "Close"}
+    missing_cols = sorted(required_cols.difference(df.columns))
+    if missing_cols:
+        raise ValueError(
+            f"SPX OHLC data is missing required columns {missing_cols}. "
+            f"Available columns: {list(df.columns)}"
+        )
+
+    if "Volume" not in df.columns:
+        df["Volume"] = np.nan
+
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    for col in ["Open", "High", "Low", "Close", "Volume"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df.dropna(subset=["Date", "Open", "High", "Low", "Close"])
+    df = df.drop_duplicates(subset=["Date"], keep="last")
+    df = df.sort_values("Date").reset_index(drop=True)
+    if df.empty:
+        raise ValueError("SPX OHLC dataset is empty after parsing.")
+    return df
+
+
+def fetch_stooq_spx_history_html(
+    *,
+    page: int | None = None,
+    verify_ssl: bool = True,
+    cafile: str | None = None,
+) -> str:
+    """
+    Fetch Stooq's HTML historical-data page for ^SPX.
+    """
+    url = "https://stooq.com/q/d/?s=%5Espx&i=d"
+    if page is not None and page > 1:
+        url = f"{url}&l={page}"
+    return read_text_over_https(url, verify_ssl=verify_ssl, cafile=cafile)
+
+
+def download_spx_ohlc_stooq_html(
+    *,
+    cached_df: pd.DataFrame | None = None,
+    verify_ssl: bool = True,
+    cafile: str | None = None,
+) -> pd.DataFrame:
+    """
+    Download ^SPX daily OHLC from Stooq's historical HTML pages.
+    - If cache exists, fetch enough recent pages to overlap with the cache and merge.
+    - If cache is missing, bootstrap the full history by walking all pages once.
+    """
+    first_html = fetch_stooq_spx_history_html(
+        verify_ssl=verify_ssl,
+        cafile=cafile,
+    )
+    first_page_df = normalize_spx_ohlc(parse_stooq_history_html(first_html))
+    last_page = extract_stooq_last_page(first_html)
+
+    if cached_df is not None and (not cached_df.empty):
+        cached_df = normalize_spx_ohlc(cached_df)
+        cached_last_date = cached_df["Date"].max()
+
+        frames = [first_page_df]
+        oldest_fetched_date = first_page_df["Date"].min()
+        page = 2
+
+        while oldest_fetched_date > cached_last_date and page <= last_page:
+            page_df = normalize_spx_ohlc(
+                parse_stooq_history_html(
+                    fetch_stooq_spx_history_html(
+                        page=page,
+                        verify_ssl=verify_ssl,
+                        cafile=cafile,
+                    )
+                )
+            )
+            frames.append(page_df)
+            oldest_fetched_date = min(oldest_fetched_date, page_df["Date"].min())
+            page += 1
+
+        return normalize_spx_ohlc(pd.concat([cached_df] + frames, ignore_index=True))
+
+    print(f"[info] Bootstrapping SPX OHLC from Stooq HTML across {last_page} pages.")
+    frames = [first_page_df]
+    for page in range(2, last_page + 1):
+        page_df = normalize_spx_ohlc(
+            parse_stooq_history_html(
+                fetch_stooq_spx_history_html(
+                    page=page,
+                    verify_ssl=verify_ssl,
+                    cafile=cafile,
+                )
+            )
+        )
+        frames.append(page_df)
+
+    return normalize_spx_ohlc(pd.concat(frames, ignore_index=True))
 
 
 def load_spx_ohlc_stooq(
@@ -366,20 +516,35 @@ def load_spx_ohlc_stooq(
     cafile: str | None = None,
 ) -> pd.DataFrame:
     """
-    Download ^SPX daily OHLC from Stooq and cache locally.
+    Download ^SPX daily OHLC from Stooq's HTML history page and cache locally.
     """
     cache_path = Path(cache_path)
-    url = "https://stooq.com/q/d/l/?s=%5Espx&i=d"  # ^spx
 
     if refresh or (not cache_path.exists()):
-        df = read_csv_over_https(url, verify_ssl=verify_ssl, cafile=cafile)
-        cache_path.write_text(df.to_csv(index=False))
+        try:
+            cached_df = pd.read_csv(cache_path) if cache_path.exists() else None
+            df = download_spx_ohlc_stooq_html(
+                cached_df=cached_df,
+                verify_ssl=verify_ssl,
+                cafile=cafile,
+            )
+        except Exception as exc:
+            if not cache_path.exists():
+                raise RuntimeError(
+                    "Failed to refresh SPX OHLC from Stooq HTML pages and "
+                    f"cache {cache_path} does not exist."
+                ) from exc
+            print(
+                f"[warn] Failed to refresh SPX OHLC from Stooq ({exc}). "
+                f"Falling back to cached file {cache_path}."
+            )
+            df = pd.read_csv(cache_path)
+        else:
+            cache_path.write_text(df.to_csv(index=False), encoding="utf-8")
     else:
         df = pd.read_csv(cache_path)
 
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
-    return df
+    return normalize_spx_ohlc(df)
 
 
 def compute_spx_forward_metrics(
@@ -766,6 +931,8 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         "CFE_VX_N6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-07-22.csv",
         "CFE_VX_Q6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-08-19.csv",
         "CFE_VX_U6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-09-16.csv",
+        "CFE_VX_V6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-10-21.csv",
+        "CFE_VX_X6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-11-18.csv",
     }
     download_cboe_vx_csvs(cboe_vx_futures_hlocv_data)
 
@@ -830,8 +997,9 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     # per_event.to_csv("spx_eventstudy_per_signal.csv", index=False)
     # summary.to_csv("spx_eventstudy_summary.csv", index=False)
 
+    # ===== VXCurrent =====
     print("/vxcurrent this month:")
-    print(df_vxcurrent_hlocv_features.tail(15))
+    print(df_vxcurrent_hlocv_features.tail(30))
     print(
         f"Today is {end_date}, vxcurrent sell signal: \n"
         "- today's volume_pct>=90\n"
