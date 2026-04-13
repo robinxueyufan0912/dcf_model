@@ -319,13 +319,15 @@ def add_volume_metrics_rows_incl_today_strict(
     )
 
     # Risk-off score (0-7)
+    # risk_off_score (0-7): sum of all 7 boolean signals
+    # risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (6-7)
     out["risk_off_score"] = (
         out["close_gt_ma50"].astype(int)
         + out["close_gt_ma20"].astype(int)
         + out["ma20_rising"].astype(int)
         + out["vol_ge_1.85x_ma50"].astype(int)
         + out["vol_ge_90pct"].astype(int)
-        + (out["vol_ge_90pct_last_5days"] >= 3).astype(int)
+        + (out["vol_ge_90pct_last_5days"] >= 2).astype(int)
         + (out["vol_ge_90pct_last_10days"] >= 3).astype(int)
     )
     out["risk_off_level"] = pd.cut(
@@ -472,8 +474,23 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     print("/vxcurrent this month:")
     print(df_vxcurrent_hlocv_features.columns)
     # "Volume/MA50", "volume_pct", 
+    # risk_off_score (0-7): sum of all 7 boolean signals
+    # risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (6-7)
     selected_col = ["Trade Date", "Futures", "Close", "Change", "close_gt_ma50", "ma20_rising", "close_gt_ma20", "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days", "risk_off_score", "risk_off_level"]
     print(df_vxcurrent_hlocv_features[selected_col].tail(print_tail_num_rows))
+
+    # Print selected date range
+    # 2024-07-18, 2024 jpy carry trade drawdown
+    # 2025-02-21, 2025 libration day drawdown
+    # 2025-11-03 - 11-04, 2025 fed rate not reduce drawdown
+    # 2026-03-02, 2026 US Iran war drawdown
+    # print_range_start, print_range_end = "2024-06-01", "2024-09-01"
+    # print_range_start, print_range_end = "2025-01-01", "2025-04-30"
+    print_range_start, print_range_end = "2026-02-01", "2025-04-01"
+    date_mask = (df_vxcurrent_hlocv_features["Trade Date"] >= print_range_start) & (df_vxcurrent_hlocv_features["Trade Date"] <= print_range_end)
+    print(f"\n/vxcurrent [{print_range_start}, {print_range_end}]:")
+    print(df_vxcurrent_hlocv_features.loc[date_mask, selected_col])
+
     print(f"Today is {end_date}")
 
 

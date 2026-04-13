@@ -138,10 +138,10 @@ Index(['Trade Date', 'Futures', 'Open', 'High', 'Low', 'Close', 'Settle',
 1199 2025-11-18  X (Nov 2025)  24.60  1.9176           True         True           True              False         False                      0.0                       0.0               3         YELLOW
 1200 2025-11-19  X (Nov 2025)  23.85 -0.0669           True         True           True              False         False                      0.0                       0.0               3         YELLOW
 1201 2025-11-20  Z (Dec 2025)  22.85  1.6347           True         True           True               True          True                      1.0                       1.0               5         ORANGE
-1202 2025-11-21  Z (Dec 2025)  21.50 -1.3137           True         True           True               True          True                      2.0                       2.0               5         ORANGE
-1203 2025-11-24  Z (Dec 2025)  19.95 -1.6585           True         True          False              False         False                      2.0                       2.0               2         YELLOW
-1204 2025-11-25  Z (Dec 2025)  19.35 -0.5769           True         True          False              False         False                      2.0                       2.0               2         YELLOW
-1205 2025-11-26  Z (Dec 2025)  18.71 -0.5748          False        False          False              False         False                      2.0                       2.0               0          GREEN
+1202 2025-11-21  Z (Dec 2025)  21.50 -1.3137           True         True           True               True          True                      2.0                       2.0               6            RED
+1203 2025-11-24  Z (Dec 2025)  19.95 -1.6585           True         True          False              False         False                      2.0                       2.0               3         YELLOW
+1204 2025-11-25  Z (Dec 2025)  19.35 -0.5769           True         True          False              False         False                      2.0                       2.0               3         YELLOW
+1205 2025-11-26  Z (Dec 2025)  18.71 -0.5748          False        False          False              False         False                      2.0                       2.0               1          GREEN
 1206 2025-11-28  Z (Dec 2025)  18.20 -0.4744          False        False          False              False         False                      1.0                       2.0               0          GREEN
 1207 2025-12-01  Z (Dec 2025)  18.35  0.0755          False        False          False              False         False                      0.0                       2.0               0          GREEN
 1208 2025-12-02  Z (Dec 2025)  18.00 -0.3970          False        False          False              False         False                      0.0                       2.0               0          GREEN
@@ -186,11 +186,11 @@ Index(['Trade Date', 'Futures', 'Open', 'High', 'Low', 'Close', 'Settle',
 1247 2026-01-29  G (Feb 2026)  18.75  0.1800           True         True           True              False          True                      1.0                       2.0               4         ORANGE
 1248 2026-01-30  G (Feb 2026)  19.10  0.2643           True         True           True              False         False                      1.0                       2.0               3         YELLOW
 1249 2026-02-02  G (Feb 2026)  17.95 -1.1330           True         True           True              False         False                      1.0                       2.0               3         YELLOW
-1250 2026-02-03  G (Feb 2026)  18.94  0.9967           True         True           True              False          True                      2.0                       2.0               4         ORANGE
-1251 2026-02-04  G (Feb 2026)  19.03  0.3843           True         True           True              False         False                      2.0                       2.0               3         YELLOW
-1252 2026-02-05  G (Feb 2026)  21.29  1.5547           True         True           True               True          True                      2.0                       3.0               6            RED
-1253 2026-02-06  G (Feb 2026)  19.14 -1.7110           True         True           True              False         False                      2.0                       3.0               4         ORANGE
-1254 2026-02-09  G (Feb 2026)  18.41 -0.8382           True         True           True              False         False                      2.0                       3.0               4         ORANGE
+1250 2026-02-03  G (Feb 2026)  18.94  0.9967           True         True           True              False          True                      2.0                       2.0               5         ORANGE
+1251 2026-02-04  G (Feb 2026)  19.03  0.3843           True         True           True              False         False                      2.0                       2.0               4         ORANGE
+1252 2026-02-05  G (Feb 2026)  21.29  1.5547           True         True           True               True          True                      2.0                       3.0               7            RED
+1253 2026-02-06  G (Feb 2026)  19.14 -1.7110           True         True           True              False         False                      2.0                       3.0               5         ORANGE
+1254 2026-02-09  G (Feb 2026)  18.41 -0.8382           True         True           True              False         False                      2.0                       3.0               5         ORANGE
 1255 2026-02-10  G (Feb 2026)  18.75  0.5081           True         True           True              False         False                      1.0                       3.0               4         ORANGE
 1256 2026-02-11  G (Feb 2026)  18.70 -0.1393           True         True           True              False         False                      1.0                       3.0               4         ORANGE
 1257 2026-02-12  G (Feb 2026)  20.50  1.9904           True         True           True              False         False                      0.0                       2.0               3         YELLOW
@@ -207,22 +207,22 @@ Index(['Trade Date', 'Futures', 'Open', 'High', 'Low', 'Close', 'Settle',
 1268 2026-03-02  H (Mar 2026)  21.11  0.2959           True         True           True              False         False                      0.0                       0.0               3         YELLOW
 1269 2026-03-03  H (Mar 2026)  22.40  1.1736           True         True           True               True          True                      1.0                       1.0               5         ORANGE
 1270 2026-03-04  H (Mar 2026)  21.34 -0.9039           True         True           True              False         False                      1.0                       1.0               3         YELLOW
-1271 2026-03-05  H (Mar 2026)  22.86  1.7720           True         True           True              False          True                      2.0                       2.0               4         ORANGE
+1271 2026-03-05  H (Mar 2026)  22.86  1.7720           True         True           True              False          True                      2.0                       2.0               5         ORANGE
 1272 2026-03-06  H (Mar 2026)  26.40  3.9920           True         True           True               True          True                      3.0                       3.0               7            RED
 1273 2026-03-09  H (Mar 2026)  23.89 -3.3984           True         True           True               True          True                      4.0                       4.0               7            RED
 1274 2026-03-10  H (Mar 2026)  24.75  1.5280           True         True           True              False          True                      4.0                       5.0               6            RED
 1275 2026-03-11  H (Mar 2026)  24.00 -1.5130           True         True           True              False          True                      5.0                       6.0               6            RED
 1276 2026-03-12  H (Mar 2026)  25.59  2.2312           True         True           True              False         False                      4.0                       6.0               5         ORANGE
 1277 2026-03-13  H (Mar 2026)  26.59  0.5571           True         True           True              False         False                      3.0                       6.0               5         ORANGE
-1278 2026-03-16  H (Mar 2026)  23.70 -3.0561           True         True           True              False         False                      2.0                       6.0               4         ORANGE
+1278 2026-03-16  H (Mar 2026)  23.70 -3.0561           True         True           True              False         False                      2.0                       6.0               5         ORANGE
 1279 2026-03-17  H (Mar 2026)  22.45 -1.0023           True         True           True              False         False                      1.0                       5.0               4         ORANGE
 1280 2026-03-18  H (Mar 2026)  23.16  0.5778           True         True           True              False         False                      0.0                       5.0               4         ORANGE
 1281 2026-03-19  J (Apr 2026)  23.85 -0.7079           True         True           True              False          True                      1.0                       5.0               5         ORANGE
-1282 2026-03-20  J (Apr 2026)  25.20  1.7999           True         True           True              False          True                      2.0                       5.0               5         ORANGE
+1282 2026-03-20  J (Apr 2026)  25.20  1.7999           True         True           True              False          True                      2.0                       5.0               6            RED
 1283 2026-03-23  J (Apr 2026)  24.15 -1.4443           True         True           True              False          True                      3.0                       5.0               6            RED
 1284 2026-03-24  J (Apr 2026)  24.32  0.6380           True         True           True              False         False                      3.0                       4.0               5         ORANGE
 1285 2026-03-25  J (Apr 2026)  24.30 -0.6519           True         True           True              False         False                      3.0                       3.0               5         ORANGE
-1286 2026-03-26  J (Apr 2026)  25.83  1.9703           True         True           True              False         False                      2.0                       3.0               4         ORANGE
+1286 2026-03-26  J (Apr 2026)  25.83  1.9703           True         True           True              False         False                      2.0                       3.0               5         ORANGE
 1287 2026-03-27  J (Apr 2026)  28.30  2.2312           True         True           True              False         False                      1.0                       3.0               4         ORANGE
 1288 2026-03-30  J (Apr 2026)  28.49 -0.2818           True         True           True              False         False                      0.0                       3.0               4         ORANGE
 1289 2026-03-31  J (Apr 2026)  24.97 -3.1858           True         True           True              False          True                      1.0                       4.0               5         ORANGE
@@ -233,4 +233,9 @@ Index(['Trade Date', 'Futures', 'Open', 'High', 'Low', 'Close', 'Settle',
 1294 2026-04-08  J (Apr 2026)  22.00 -3.3099          False        False          False              False          True                      1.0                       2.0               1          GREEN
 1295 2026-04-09  J (Apr 2026)  20.26 -1.3887          False        False          False              False         False                      1.0                       2.0               0          GREEN
 1296 2026-04-10  J (Apr 2026)  20.11  0.1311          False        False          False              False         False                      1.0                       2.0               0          GREEN
+
+/vxcurrent [2026-02-01, 2025-04-01]:
+Empty DataFrame
+Columns: [Trade Date, Futures, Close, Change, close_gt_ma50, ma20_rising, close_gt_ma20, vol_ge_1.85x_ma50, vol_ge_90pct, vol_ge_90pct_last_5days, vol_ge_90pct_last_10days, risk_off_score, risk_off_level]
+Index: []
 Today is 2026-04-12
