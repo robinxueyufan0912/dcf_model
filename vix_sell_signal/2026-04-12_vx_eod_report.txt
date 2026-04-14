@@ -233,9 +233,4 @@ Index(['Trade Date', 'Futures', 'Open', 'High', 'Low', 'Close', 'Settle',
 1294 2026-04-08  J (Apr 2026)  22.00 -3.3099          False        False          False              False          True                      1.0                       2.0               1          GREEN
 1295 2026-04-09  J (Apr 2026)  20.26 -1.3887          False        False          False              False         False                      1.0                       2.0               0          GREEN
 1296 2026-04-10  J (Apr 2026)  20.11  0.1311          False        False          False              False         False                      1.0                       2.0               0          GREEN
-
-/vxcurrent [2026-02-01, 2025-04-01]:
-Empty DataFrame
-Columns: [Trade Date, Futures, Close, Change, close_gt_ma50, ma20_rising, close_gt_ma20, vol_ge_1.85x_ma50, vol_ge_90pct, vol_ge_90pct_last_5days, vol_ge_90pct_last_10days, risk_off_score, risk_off_level]
-Index: []
 Today is 2026-04-12

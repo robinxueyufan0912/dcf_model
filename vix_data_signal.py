@@ -1,6 +1,5 @@
 import contextlib
 import datetime as dt
-import re
 import ssl
 import sys
 import urllib.request
@@ -15,20 +14,7 @@ pd.set_option("display.width", None)
 
 
 # 月份码（如果你后面要生成 VXH5 之类符号会用到）
-MONTH_CODE = {
-    1: "F",
-    2: "G",
-    3: "H",
-    4: "J",
-    5: "K",
-    6: "M",
-    7: "N",
-    8: "Q",
-    9: "U",
-    10: "V",
-    11: "X",
-    12: "Z",
-}
+MONTH_CODE = {1: "F", 2: "G", 3: "H", 4: "J", 5: "K", 6: "M", 7: "N", 8: "Q", 9: "U", 10: "V", 11: "X", 12: "Z"}
 
 
 def third_friday(year: int, month: int) -> dt.date:
@@ -46,9 +32,7 @@ def prev_business_day(d: dt.date, holidays: set[dt.date]) -> dt.date:
     return d
 
 
-def vix_monthly_final_settlement(
-    contract_year: int, contract_month: int, holidays: set[dt.date] | None = None
-) -> dt.date:
+def vix_monthly_final_settlement(contract_year: int, contract_month: int, holidays: set[dt.date] | None = None) -> dt.date:
     """
     月度VX合约最终结算日（Final Settlement Date）：
     = 下一自然月第三个周五(如遇假日先向前找工作日) - 30天
@@ -79,9 +63,7 @@ def add_months(y: int, m: int, k: int) -> tuple[int, int]:
     return ny, nm
 
 
-def build_vx_monthly_schedule(
-    start_date: dt.date, end_date: dt.date, holidays: set[dt.date]
-) -> list[dict]:
+def build_vx_monthly_schedule(start_date: dt.date, end_date: dt.date, holidays: set[dt.date]) -> list[dict]:
     """
     生成 [start_date, end_date] 覆盖范围内的“合约月份 -> Final Settlement Date”列表。
     为了保证边界日期也能找到 current，需要向前/向后扩展几个月。
@@ -101,12 +83,7 @@ def build_vx_monthly_schedule(
     y, m = y0, m0
     while (y, m) <= (y1, m1):
         fsd = vix_monthly_final_settlement(y, m, holidays)
-        schedule.append(
-            {
-                "contract_month": f"{y:04d}-{m:02d}",
-                "fsd": fsd,
-            }
-        )
+        schedule.append({"contract_month": f"{y:04d}-{m:02d}", "fsd": fsd})
         y, m = add_months_local(y, m, +1)
 
     # 按到期日排序（保证“找最早未到期”）
@@ -125,16 +102,25 @@ def vxcurrent_contract_month_for_date(d: dt.date, schedule: list[dict]) -> str:
     raise ValueError(f"No VXCurrent found for date={d}; schedule range too small.")
 
 
+def vxnext_contract_month_for_date(d: dt.date, schedule: list[dict]) -> str:
+    """
+    给定日期 d，返回下一个月的 VX 合约月份（YYYY-MM）。
+    逻辑：找 fsd >= d 的第二个合约月份。
+    """
+    found = 0
+    for item in schedule:
+        if item["fsd"] >= d:
+            found += 1
+            if found == 2:
+                return item["contract_month"]
+    raise ValueError(f"No VXNext found for date={d}; schedule range too small.")
+
+
 def is_business_day(d: dt.date, holidays: set[dt.date]) -> bool:
     return (d.weekday() < 5) and (d not in holidays)
 
 
-def vxcurrent_map(
-    start_date: dt.date,
-    end_date: dt.date,
-    holidays: set[dt.date],
-    business_days_only: bool = True,
-) -> dict[dt.date, str]:
+def vxcurrent_map(start_date: dt.date, end_date: dt.date, holidays: set[dt.date], business_days_only: bool = True) -> dict[dt.date, str]:
     """
     返回 dict: {date -> VXCurrent contract_month}
     - business_days_only=True: 只返回交易日（排除周末和holiday）
@@ -155,9 +141,26 @@ def vxcurrent_map(
     return out
 
 
-def vx_expiry_table(
-    x: dt.date, n_months_back: int, holidays: set[dt.date] | None = None
-):
+def vxnext_map(start_date: dt.date, end_date: dt.date, holidays: set[dt.date], business_days_only: bool = True) -> dict[dt.date, str]:
+    """
+    返回 dict: {date -> VXNext contract_month} (第二近月合约)
+    """
+    if end_date < start_date:
+        raise ValueError("end_date must be >= start_date")
+
+    schedule = build_vx_monthly_schedule(start_date, end_date, holidays)
+
+    out = {}
+    d = start_date
+    while d <= end_date:
+        if (not business_days_only) or is_business_day(d, holidays):
+            out[d] = vxnext_contract_month_for_date(d, schedule)
+        d += dt.timedelta(days=1)
+
+    return out
+
+
+def vx_expiry_table(x: dt.date, n_months_back: int, holidays: set[dt.date] | None = None):
     """
     输出从 (x 往前 n 个月) 到 x 的每个月度VX合约（按合约月份）对应的最终结算日
     """
@@ -195,11 +198,7 @@ def load_vx_csvs(data_dir: str | Path) -> pd.DataFrame:
 
 
 def download_cboe_vx_csvs(
-    cboe_vx_futures_hlocv_data: dict[str, str],
-    data_dir: str | Path | None = None,
-    *,
-    verify_ssl: bool = True,
-    cafile: str | None = None,
+    cboe_vx_futures_hlocv_data: dict[str, str], data_dir: str | Path | None = None, *, verify_ssl: bool = True, cafile: str | None = None
 ) -> list[Path]:
     """Download CSVs to data_dir using dict keys as filenames."""
     if data_dir is None:
@@ -235,27 +234,16 @@ def contract_month_to_futures_label(contract_month: str) -> str:
     return f"{MONTH_CODE[month]} ({month_label})"
 
 
-def rows_for_vxcurrent_map(
-    m: dict[dt.date, str],
-    all_data: pd.DataFrame,
-    *,
-    strict: bool = True,
-) -> pd.DataFrame:
+def rows_for_vxcurrent_map(m: dict[dt.date, str], all_data: pd.DataFrame, *, strict: bool = True) -> pd.DataFrame:
     """Return rows from all_data matching each trade date and its VXCurrent futures label."""
     rows = []
     for trade_date, contract_month in m.items():
         trade_date_str = trade_date.isoformat()
         futures_label = contract_month_to_futures_label(contract_month)
-        match = all_data.loc[
-            (all_data["Trade Date"] == trade_date_str)
-            & (all_data["Futures"] == futures_label)
-        ]
+        match = all_data.loc[(all_data["Trade Date"] == trade_date_str) & (all_data["Futures"] == futures_label)]
         if match.empty:
             if strict:
-                raise LookupError(
-                    "No matching row for "
-                    f"Trade Date={trade_date_str}, Futures={futures_label}"
-                )
+                raise LookupError(f"No matching row for Trade Date={trade_date_str}, Futures={futures_label}")
             continue
         rows.append(match)
     if not rows:
@@ -268,7 +256,7 @@ def add_volume_metrics_rows_incl_today_strict(
     *,
     date_col: str = "Trade Date",
     volume_col: str = "Total Volume",
-    lookback_rows: int = 252, # 252 # 365
+    lookback_rows: int = 252,  # 252 # 365
     ma_window: int = 50,
 ) -> pd.DataFrame:
     out = df.copy()
@@ -283,11 +271,9 @@ def add_volume_metrics_rows_incl_today_strict(
     out["close_gt_ma50"] = out["Close"] > out["Close_MA50"]
     out["ma20_rising"] = out["Close_MA20"].diff() > 0
     out["close_gt_ma20"] = out["Close"] > out["Close_MA20"]
-    
+
     # Volume signals
-    out["Volume_MA50"] = (
-        out[volume_col].rolling(ma_window, min_periods=ma_window).mean()
-    )
+    out["Volume_MA50"] = out[volume_col].rolling(ma_window, min_periods=ma_window).mean()
     out["Volume/MA50"] = out[volume_col] / out["Volume_MA50"]
 
     def pct_rank_in_window(arr: np.ndarray) -> float:
@@ -297,26 +283,14 @@ def add_volume_metrics_rows_incl_today_strict(
             return np.nan
         v = arr[-1]  # 当日值（窗口最后一个）
         return float(np.mean(arr <= v) * 100.0)
-    
-    out["volume_pct"] = (
-        out[volume_col]
-        .rolling(window=lookback_rows, min_periods=lookback_rows)
-        .apply(pct_rank_in_window, raw=True)
-    )
+
+    out["volume_pct"] = out[volume_col].rolling(window=lookback_rows, min_periods=lookback_rows).apply(pct_rank_in_window, raw=True)
 
     out["vol_ge_1.85x_ma50"] = out["Volume/MA50"] >= 1.85
     out["vol_ge_90pct"] = out["volume_pct"] >= 90
 
-    out["vol_ge_90pct_last_5days"] = (
-        out["volume_pct"]
-        .rolling(window=5, min_periods=5)
-        .apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
-    )
-    out["vol_ge_90pct_last_10days"] = (
-        out["volume_pct"]
-        .rolling(window=10, min_periods=10)
-        .apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
-    )
+    out["vol_ge_90pct_last_5days"] = out["volume_pct"].rolling(window=5, min_periods=5).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
+    out["vol_ge_90pct_last_10days"] = out["volume_pct"].rolling(window=10, min_periods=10).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
 
     # Risk-off score (0-7)
     # risk_off_score (0-7): sum of all 7 boolean signals
@@ -330,14 +304,22 @@ def add_volume_metrics_rows_incl_today_strict(
         + (out["vol_ge_90pct_last_5days"] >= 2).astype(int)
         + (out["vol_ge_90pct_last_10days"] >= 3).astype(int)
     )
-    out["risk_off_level"] = pd.cut(
-        out["risk_off_score"],
-        bins=[-1, 1, 3, 5, 7],
-        labels=["GREEN", "YELLOW", "ORANGE", "RED"],
-    )
+    out["risk_off_level"] = pd.cut(out["risk_off_score"], bins=[-1, 1, 3, 5, 7], labels=["GREEN", "YELLOW", "ORANGE", "RED"])
 
     out = out.reset_index(drop=True)
     return out
+
+
+def print_date_range(df: pd.DataFrame, start: str, end: str, cols: list[str] | None = None, label: str = "") -> None:
+    """Print rows of df where Trade Date is between [start, end]."""
+    mask = (df["Trade Date"] >= start) & (df["Trade Date"] <= end)
+    tag = label or df.columns[1]  # fallback to second col name as label
+    print(f"\n/{tag} [{start}, {end}]:")
+    if cols:
+        print(df.loc[mask, cols])
+    else:
+        print(df.loc[mask])
+
 
 def run_vx_eod_report(end_date: dt.date) -> None:
     HOLIDAYS_2023 = [
@@ -394,9 +376,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         ]
     )
     x = dt.date(2025, 2, 24)
-    table = vx_expiry_table(
-        x, n_months_back=12, holidays=holidays
-    )  # holidays 你可以传入Cboe options holiday日期集合
+    table = vx_expiry_table(x, n_months_back=12, holidays=holidays)  # holidays 你可以传入Cboe options holiday日期集合
     for r in table:
         print(r)
 
@@ -456,42 +436,77 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     data_dir = Path(__file__).resolve().parent / "data"
     all_data = load_vx_csvs(data_dir)
     df_vxcurrent_hlocv = rows_for_vxcurrent_map(m, all_data, strict=False)
-    print("/df_vxcurrent_hlocv:")
-    print(df_vxcurrent_hlocv.tail(print_tail_num_rows))
-    # df_vxcurrent_hlocv.to_csv("vxcurrent_hlocv.csv")
+
+    # ===== VXNext (second nearest month) HLOCV =====
+    m_next = vxnext_map(start_date, end_date, holidays, business_days_only=True)
+    df_vxnext_hlocv = rows_for_vxcurrent_map(m_next, all_data, strict=False)
+
+    next_cols_rename = {
+        "Futures": "next_Futures",
+        "Open": "next_Open",
+        "High": "next_High",
+        "Low": "next_Low",
+        "Close": "next_Close",
+        "Settle": "next_Settle",
+        "Change": "next_Change",
+        "Total Volume": "next_Total Volume",
+        "EFP": "next_EFP",
+        "Open Interest": "next_Open Interest",
+    }
+    df_vxnext_hlocv = df_vxnext_hlocv[["Trade Date"] + list(next_cols_rename.keys())]
+    df_vxnext_hlocv = df_vxnext_hlocv.rename(columns=next_cols_rename)
+
+    df_vxcurrent_vxnext_hlocv = df_vxcurrent_hlocv.merge(df_vxnext_hlocv, on="Trade Date", how="left")
+
+    df_vxcurrent_vxnext_hlocv["front_next_OI"] = pd.to_numeric(df_vxcurrent_vxnext_hlocv["Open Interest"], errors="coerce").fillna(0) + pd.to_numeric(
+        df_vxcurrent_vxnext_hlocv["next_Open Interest"], errors="coerce"
+    ).fillna(0)
+    df_vxcurrent_vxnext_hlocv = df_vxcurrent_vxnext_hlocv.sort_values("Trade Date").reset_index(drop=True)
+    df_vxcurrent_vxnext_hlocv["front_next_OI_delta"] = df_vxcurrent_vxnext_hlocv["front_next_OI"].diff()
+    # NaN on contract roll dates — the delta is meaningless when front/next contracts change
+    roll_mask = df_vxcurrent_vxnext_hlocv["Futures"] != df_vxcurrent_vxnext_hlocv["Futures"].shift(1)
+    df_vxcurrent_vxnext_hlocv.loc[roll_mask, "front_next_OI_delta"] = np.nan
+
+    print("/df_vxcurrent_vxnext_hlocv:")
+    print(df_vxcurrent_vxnext_hlocv.tail(print_tail_num_rows))
+    # df_vxcurrent_vxnext_hlocv.to_csv("df_vxcurrent_vxnext_hlocv.csv")
+
+    ### Print selected date range for df_vxcurrent_vxnext_hlocv
+    # 2025-11-03 - 11-04, 2025 fed rate not reduce drawdown
+    # print_date_range(df_vxcurrent_vxnext_hlocv, "2024-06-01", "2024-09-01", label="df_vxcurrent_vxnext_hlocv") # 2024-07-18, 2024 jpy carry trade drawdown
+    # print_date_range(df_vxcurrent_vxnext_hlocv, "2025-01-01", "2025-04-30", label="df_vxcurrent_vxnext_hlocv") # 2025-02-21, 2025 libration day drawdown
+    # print_date_range(df_vxcurrent_vxnext_hlocv, "2026-02-01", "2026-04-01", label="df_vxcurrent_vxnext_hlocv") # 2026-03-02, 2026 US Iran war drawdown
 
     # ===== Derive features to predict draw down =====
-    df_vxcurrent_hlocv_features = add_volume_metrics_rows_incl_today_strict(
-        df_vxcurrent_hlocv, 
-        lookback_rows=252, # one year has 252 trading days
-        ma_window=50
+    df_vxcurrent_vxnext_hlocv_features = add_volume_metrics_rows_incl_today_strict(
+        df_vxcurrent_vxnext_hlocv,
+        lookback_rows=252,  # one year has 252 trading days
+        ma_window=50,
     )
-    df_vxcurrent_hlocv_features.to_csv(
-        f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv"
-    )
+    df_vxcurrent_vxnext_hlocv_features.to_csv(f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv")
 
     # ===== VXCurrent =====
-    print("/vxcurrent this month:")
-    print(df_vxcurrent_hlocv_features.columns)
-    # "Volume/MA50", "volume_pct", 
-    # risk_off_score (0-7): sum of all 7 boolean signals
-    # risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (6-7)
-    selected_col = ["Trade Date", "Futures", "Close", "Change", "close_gt_ma50", "ma20_rising", "close_gt_ma20", "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days", "risk_off_score", "risk_off_level"]
-    print(df_vxcurrent_hlocv_features[selected_col].tail(print_tail_num_rows))
+    print("/df_vxcurrent_vxnext_hlocv_features.columns:")
+    print(df_vxcurrent_vxnext_hlocv_features.columns)
+    print("/df_vxcurrent_vxnext_hlocv_features this month:")
+    selected_col = [
+        "Trade Date", "Futures", "Close", "Change", 
+        "close_gt_ma50", "ma20_rising","close_gt_ma20", # VX Price signal
+        "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days", # VX Volume signal
+        "risk_off_score", "risk_off_level", # VX risk_off_score and risk_off_level
+        # "front_next_OI_delta",
+    ]
+    print(df_vxcurrent_vxnext_hlocv_features[selected_col].tail(print_tail_num_rows))
 
-    # Print selected date range
-    # 2024-07-18, 2024 jpy carry trade drawdown
-    # 2025-02-21, 2025 libration day drawdown
+    ### Print selected date range for df_vxcurrent_vxnext_hlocv_features
     # 2025-11-03 - 11-04, 2025 fed rate not reduce drawdown
-    # 2026-03-02, 2026 US Iran war drawdown
-    # print_range_start, print_range_end = "2024-06-01", "2024-09-01"
-    # print_range_start, print_range_end = "2025-01-01", "2025-04-30"
-    print_range_start, print_range_end = "2026-02-01", "2025-04-01"
-    date_mask = (df_vxcurrent_hlocv_features["Trade Date"] >= print_range_start) & (df_vxcurrent_hlocv_features["Trade Date"] <= print_range_end)
-    print(f"\n/vxcurrent [{print_range_start}, {print_range_end}]:")
-    print(df_vxcurrent_hlocv_features.loc[date_mask, selected_col])
+    # print_date_range(df_vxcurrent_vxnext_hlocv_features, "2024-06-01", "2024-09-01", cols=selected_col, label="vxcurrent_features") # 2024-07-18, 2024 jpy carry trade drawdown
+    # print_date_range(df_vxcurrent_vxnext_hlocv_features, "2025-01-01", "2025-04-30", cols=selected_col, label="vxcurrent_features") # 2025-02-21, 2025 libration day drawdown
+    # print_date_range(df_vxcurrent_vxnext_hlocv_features, "2026-02-01", "2026-04-01", cols=selected_col, label="vxcurrent_features") # 2026-03-02, 2026 US Iran war drawdown
 
     print(f"Today is {end_date}")
+    print("# risk_off_score (0-7): sum of all 7 boolean signals")
+    print("# risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (6-7)")
 
 
 # 示例
@@ -513,7 +528,5 @@ if __name__ == "__main__":
             for file in self._files:
                 file.flush()
 
-    with report_path.open("w", encoding="utf-8") as report_file, contextlib.redirect_stdout(
-        _Tee(sys.stdout, report_file)
-    ):
+    with report_path.open("w", encoding="utf-8") as report_file, contextlib.redirect_stdout(_Tee(sys.stdout, report_file)):
         run_vx_eod_report(end_date)
