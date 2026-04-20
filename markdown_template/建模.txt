@@ -1,0 +1,65 @@
+建模						
+Current quarter's report	Value	Note				
+Quarter time						
+Revenue						
+Revenue QoQ%						
+Revenue YoY%						
+Gross margin (%)						
+Gross profit						
+Operating expenses						
+Operating margin (%)						
+Operating income						
+Operating income QoQ%						
+Tax rate						
+Net margin (%)						
+Net income						
+Net income QoQ%						
+						
+Next quarter's guidance	Value	Note				
+Quarter time						
+Revenue						
+Revenue QoQ%						
+Revenue YoY%						
+Gross margin (%)						
+Gross profit						
+Operating expenses						
+Operating margin (%)						
+Operating income						
+Operating income QoQ%						
+Tax rate						
+Net margin (%)						
+Net income						
+Net income QoQ%						
+						
+Current quarter to +3 quarter	current quarter	current quarter+1 (next quarter based on guidance)	current quarter+2(based on estimation, as accurate as possible)	current quarter+3 (est, most accurate please)	sum of all 4 quarters	Note
+Quarter time						
+Revenue ($B)						
+Revenue QoQ%						
+Revenue YoY%						
+Gross margin (%)						
+Gross profit ($B)						
+Operating expenses						
+Operating margin (%)						
+Operating income (EBIT) ($B)						
+Operating income QoQ%						
+Tax rate						
+Net margin (%)						
+Net income ($B)						
+Net income QoQ%						
+						
+Forward year 	Value	Note				
+"quarter revenue for current quarter / c+1 quarter / c+2 / c+3 
+(Forward Annual Revenue, 
+include current quarter to +3 quarter）"						
+Foward anual revenue (current to current+3 quarter)						
+"quarter net income for current quarter / c+1 quarter / c+2 / c+3 
+(Forward Annual net income, 
+include current quarter to +3 quarter）"						
+Foward anual net income (current to current+3 quarter)						
+Tax rate						
+Net margin (%)						
+Net income						
+P/E						
+P/S						
+						
+输出markdown格式						

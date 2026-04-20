@@ -1,0 +1,113 @@
+起点（FQ2'26）NI: $14B
+
+未来的quarter-by-quarter compound:
+FQ3'26: 14.0 × 1.57 = $22.0B
+FQ4'26: 22.0 × 1.177 = $25.9B
+FQ1'27: 25.9 × 1.079 = $28.0B  ← peak
+FQ2'27: 估计 $26.0B  (QoQ 转负，周期见顶)
+FQ3'27: 估计 $22.0B  (继续下降)
+FQ4'27: 估计 $18.0B  (continued downcycle)
+FY27 trough: $15B
+FY28 recovery: 逐步回升
+FY30+ normalized: ~$30B，每年涨3-5%
+
+画出来是一个倒U型:
+         $28B  ← peak
+        /      \
+  $14B         $15B  ← trough
+               /
+             $30B normalized (终值)
+
+------
+
+起点（FQ2'26）NI: $144M
+
+未来的quarter-by-quarter compound:
+FQ3'26: 144 × 1.445 = $208M
+FQ4'26: 208 × 1.288 = $268M
+FQ1'27: 268 × 1.246 = $334M
+FQ2'27: ~$405M (假设QoQ +21%)
+FQ3'27: ~$480M (QoQ +18%)
+FQ4'27: ~$560M (QoQ +17%)
+FY27 annualized: ~$1.5B
+FY28: ~$2.2B  (continued secular expansion)
+FY29: ~$2.8B
+FY30+: 可能$3.5-4B，然后进入成熟期
+
+画出来是一个持续上升的curve:
+                            $4B+ mature
+                        $3B
+                    $2B
+                $1B+
+            $600M
+        $300M
+    $150M
+
+------------------------------------
+
+Market在任何时刻都有一个consensus trajectory：
+  未来所有Q的NI QoQ预期 → embedded在current股价里
+  → 隐含着当前的implied g和M
+
+财报发布：
+  Actual QoQ vs Expected QoQ的差异 = Surprise
+
+如果Actual > Expected:
+  → Market发现"原来trajectory比想象的更好"
+  → 上调未来all future Q的NI estimate
+  → 整条curve向上shift
+  → Implied g上调
+  → M扩张
+  → 股价涨 (即使是周期股MU也会涨)
+
+如果Actual < Expected:
+  → Market发现"原来trajectory比想象的更差"
+  → 下调未来all future Q的NI estimate
+  → 整条curve向下shift
+  → Implied g下调
+  → M压缩
+  → 股价跌 (即使是secular growth LITE也会跌)
+
+------
+
+假设actual FQ3 NI QoQ: +70% (vs expected +57%)
+FQ4 guidance: implies +25% QoQ (vs consensus +17.7%)
+
+Market的内部计算：
+
+Before:
+  Expected trajectory: FQ3 $22B → FQ4 $25.9B → FQ1'27 $28B (peak) 
+                     → FQ2'27 $26B → trough $15B → normalized $30B
+  Implied永续g: 3-5%
+  Fair multiple: 5.86x
+
+After beat & raise:
+  Updated trajectory: FQ3 $23.8B → FQ4 $29.8B → FQ1'27 $32B+ (higher peak)
+                    → FQ2'27 $30B → trough上移到$20B → normalized上移到$35B
+  Implied永续g: 5-7% (上调)
+  Fair multiple: 7-8x (M扩张)
+
+股价反应:
+  E (forward NI) 上调 ~10%
+  M 扩张从5.86x → 7x
+  P = E × M 双重上涨可能 +20-30%
+
+------
+
+actual FQ3: +57%（符合guidance）
+FQ4 guidance: implies +10% QoQ (vs consensus +17.7%)
+
+Market的内部计算：
+
+Before: 同上
+After: 
+  Updated trajectory: FQ3 $22B (符合) → FQ4 $24.2B (低于预期的$25.9B) 
+                    → FQ1'27 peak下修到$26B (vs $28B)
+                    → downcycle trough提前到$12B (vs $15B)
+  Implied永续g: 2-3% (下调)
+  Fair multiple: 4-5x (M压缩)
+
+股价反应:
+  E (forward NI) 下调 ~10%
+  M 压缩从5.86x → 4.5x
+  P = E × M 双重下跌可能 -20-30%
