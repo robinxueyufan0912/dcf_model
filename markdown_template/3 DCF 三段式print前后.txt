@@ -1,0 +1,5 @@
+按DCF三段式，对
+- near term FCF and Net Income(NI)
+- long term FCF and NI
+- terminal FCF, NI, value, gross margin
+每一项深度挖掘然后深入分析print前后的revise(buy-side whisper vs actual)

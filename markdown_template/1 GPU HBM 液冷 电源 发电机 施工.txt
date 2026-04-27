@@ -1,0 +1,46 @@
+GPU:
+	- NVDA
+	- AVGO
+HBM:
+	- EWY (SK Hynix, Samsung)
+	- DRAM (SK Hynix, Samsung)
+	- MU
+NAND 
+	- SNDK
+HBM Equipment
+	- ASML
+	- LRCX (TSV钻孔)
+	- AMAT
+HBM 测试
+	- TER
+	- FORM
+	- ONTO
+Wafer fab
+	- TSM
+	- ASE
+	- AMKR
+PCB
+	- TTMI
+	- ROG
+CPU
+	- INTL
+	- AMD
+	- ARM
+液冷
+	- VRT
+电源
+	- ADI
+	- MPWR
+	- AEIS
+	- VICR
+发电机
+	- CAT
+	- GEV
+	- FTAI
+	- BE
+施工
+	- FIX
+	- PWR
+	- MTZ
+	- MYRG
+

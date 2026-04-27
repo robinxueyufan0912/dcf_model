@@ -1,0 +1,39 @@
+光通信 (1.6T可插拔光模块，NPO/LPO, CPO)
+ASIC:
+	- NVDA
+	- AVGO
+DSP:
+	- AVGO
+	- MRVL
+Driver/TIA:
+	- MRVL
+	- SMTC
+	- MACOM
+CW:
+	- LITE
+	- COHR
+	- AAOI
+	- AXTI
+SiPh/PIC(设计):
+	- STM
+	- COHR
+	- MRVL
+	- CRDO
+	- CIEN
+SiPh/PIC(代工):
+	- TSEM
+	- GFS
+	- STM
+SiPh/PIC(封装):
+	- FN
+	- ASE
+	- AMKR
+测试:
+	- VIAV
+	- KEYS
+	- TER
+	- FORM
+Fiber/FAU
+	- GLW
+	- APH
+	- TEL
