@@ -1,5 +1,16 @@
-按DCF三段式，对
-- near term FCF and Net Income(NI)
-- long term FCF and NI
-- terminal FCF, NI, value, gross margin
-每一项深度挖掘然后深入分析print前后的revise(buy-side whisper vs actual)
+对 {ticker} 做print前后的
+三段式DCF的时间段: 
+    - short term(current q, next q, FY)
+    - long term(FY1,2,3)
+    - terminal
+给出以上每个时间段的
+	- Revenue
+    - FCF
+    - NI
+    - GM(Gross margin)
+    - present value(PV)
+在
+    - print前的值(buy-side whisper), print后的值(actual from print and guide, whisper post-print)
+    - revision方向(buy-side whisper vs actual)
+    - revision的具体delta值
+深入研究并给出分析

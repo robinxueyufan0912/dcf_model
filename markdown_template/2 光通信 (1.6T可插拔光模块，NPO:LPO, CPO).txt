@@ -2,38 +2,52 @@
 ASIC:
 	- NVDA
 	- AVGO
-DSP:
+DSP (NIC):
 	- AVGO
 	- MRVL
-Driver/TIA:
+Driver/TIA (NIC):
 	- MRVL
 	- SMTC
 	- MACOM
-CW:
+NIC代工
+	- TSMC
+InP Wafer
+	- AXTI
+做InP laser/VCSEL/EEL/硅光/封装的制造设备:
+	- VECO
+CW laser:
 	- LITE
+	- Yuanjie semi
 	- COHR
 	- AAOI
-	- AXTI
+	- SIVERS
 SiPh/PIC(设计):
-	- STM
 	- COHR
 	- MRVL
+	- STM
 	- CRDO
-	- CIEN
 SiPh/PIC(代工):
-	- TSEM
 	- GFS
 	- STM
+	- TSEM
+	- TSMC(COUPE, CPO only)
 SiPh/PIC(封装):
-	- FN
-	- ASE
-	- AMKR
-测试:
+	- FN (1.6T可插拔光模块 only, no CPO)
+	- ASE (CPO only)
+	- AMKR (CPO only)
+	- TSMC (COUPE, CPO only)
+测试 (
+	1.6T模块“测试”直接度：VIAV ≈ KEYS > FORM > VECO
+	1.6T模块“光器件制造”直接度：VECO > FORM > KEYS/VIAV
+	CPO“测试”直接度：FORM > KEYS ≈ VIAV > VECO
+	CPO“制造设备/ELS laser/硅光封装”直接度：VECO很强，可能比FORM更像capex beta):
 	- VIAV
 	- KEYS
-	- TER
-	- FORM
+	- FORM (硅光PIC晶圆级光电测试)
 Fiber/FAU
-	- GLW
+	- GLW (Fiber/FAU)
 	- APH
 	- TEL
+DCI
+	- CIEN
+	- NOK

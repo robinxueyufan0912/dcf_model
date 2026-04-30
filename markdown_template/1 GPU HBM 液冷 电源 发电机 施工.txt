@@ -17,6 +17,8 @@ HBM 测试
 	- ONTO
 Wafer fab
 	- TSM
+Package
+	- TSM
 	- ASE
 	- AMKR
 PCB
@@ -39,8 +41,8 @@ CPU
 	- FTAI
 	- BE
 施工
-	- FIX
-	- PWR
-	- MTZ
-	- MYRG
+	- FIX(液冷机房底座)
+	- PWR(拉电网)
+	- MTZ(拉光纤)
+	- MYRG (PWR小弟)
 
