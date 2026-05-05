@@ -1,0 +1,10 @@
+{ticker}
+当前股价implied的
+	- short term
+	- long term
+	- terminal
+以上每个duration对应的
+	- FCF
+	- NI
+	- GM
+	- present value(PV)

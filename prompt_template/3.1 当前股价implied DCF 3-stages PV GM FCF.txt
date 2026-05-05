@@ -1,9 +1,0 @@
-目前股价implied的
-- short term
-- long term
-- terminal
-每个duration对应的
-- FCF
-- NI
-- GM 
-- present value(PV)

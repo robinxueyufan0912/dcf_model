@@ -1,0 +1,19 @@
+对 {ticker} 做 current stock price implied 三段式 DCF。
+
+用当前股价 {current_price} 反推市场 implied 的 short-term / long-term / terminal value。
+
+请先列出：
+market cap, EV, net debt, share count, discount rate, terminal growth, base model。
+
+用 inverse DCF 输出三个 scenario：
+A. short-term adjust only
+B. long-term adjust only
+C. terminal adjust only
+
+每个 scenario 输出：
+Revenue, GM, NI, FCF, PV, delta vs base model, delta %, plausibility。
+
+最后回答：
+当前股价主要 priced in 什么？near-term beat、out-year growth、margin expansion、terminal multiple，还是 lower risk premium？
+
+如果无法唯一反推，请明确说明，并用 sensitivity 展示。

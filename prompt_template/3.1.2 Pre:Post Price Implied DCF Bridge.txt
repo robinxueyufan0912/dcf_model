@@ -1,0 +1,21 @@
+对 {ticker} 做 print 前 vs print 后 stock-price-implied DCF bridge。
+
+输入：
+- print date = 最近的一次print date
+- pre-print price = print date的收盘价
+- post-print price = post print的盘后价
+- pre/post EV, net debt, share count, 10Y, ERP, discount rate (请查询最新最准确的数字)
+
+请分别反推：
+1. pre-print price implied DCF
+2. post-print price implied DCF
+
+每个 stage 输出：
+Revenue, GM, NI, FCF, PV, pre value, post value, delta, delta %, main driver。
+
+然后把股价变化拆成：
+short-term revision, long-term revision, terminal value change, discount rate / ERP change, net debt/share count change, multiple re-rating, residual。
+
+最后判断：
+市场是把 print 当作 one-time change，还是 structural change？
+post-print 股价 implied 的假设是否过高或过低？

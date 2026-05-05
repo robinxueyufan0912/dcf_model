@@ -1,0 +1,19 @@
+对 {ticker} 做 print 前后三段式 DCF revision。
+
+定义：
+- pre-print = 最新最近的财报前
+- post-print = 最新最近的财报后
+- short term = reported Q / next Q / current FY
+- long term = FY+1 to FY+3
+- terminal = FY+4 以后
+
+请比较 pre-print buy-side whisper / base model 与 post-print actual + guide + revised whisper。
+
+每个 stage 输出：
+Revenue, GM, NI, FCF, PV, delta, delta %, revision direction, confidence, source。
+
+然后给出 PV bridge：
+short-term PV delta, long-term PV delta, terminal PV delta, net debt/share count delta, total equity value delta, per-share delta。
+
+最后解释：
+股价反应主要来自 near-term beat/miss、guide、margin、terminal value、multiple re-rating，还是 macro / ERP？

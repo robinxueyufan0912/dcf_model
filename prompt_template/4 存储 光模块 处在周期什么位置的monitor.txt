@@ -1,0 +1,55 @@
+/需求端
+需求端从三大CSP AWS/Azure/Gcloud来看，他们的capex的带来的ai dc主题需求如何，在上升还是下降，增速如何，qoq的变化，以及二阶导数如何
+
+--------存储--------
+/HBM
+HBM是Cyclical还是Secular
+	- HBM过去六个月到这一刻的spot price, MoM delta
+
+MU是在cycle peak么
+
+/NAND
+NAND是Cyclical还是Secular
+	- NAND过去六个月到这一刻的spot price, MoM delta
+
+SNDK是在cycle peak么
+
+/HDD
+HDD是Cyclical还是Secular
+	- HDD过去六个月到这一刻的spot price, MoM delta
+
+STX/WDC是在cycle peak么
+
+--------光-------
+/1.6T可插拔光模块
+1.6T可插拔光模块是Cyclical还是Secular
+	- 1.6T可插拔光模块过去六个月到这一刻的spot price, MoM delta
+
+MRVL是在cycle peak么
+COHR是在cycle peak么
+LITE是在cycle peak么
+STM是在cycle peak么
+
+/NPO CPO
+NPO CPO是Cyclical还是Secular
+	- NPO CPO过去六个月到这一刻的spot price, MoM delta
+
+--------agent CPU--------
+/sever cpu
+server cpu是Cyclical还是Secular
+	- server cpu过去六个月到这一刻的spot price, MoM delta
+
+--------液冷--------
+/液冷
+液冷是Cyclical还是Secular
+	- 液冷过去六个月到这一刻的spot price, MoM delta
+
+--------能源--------
+/AI datacenter 发电机
+AI datacenter 发电机是Cyclical还是Secular
+	- AI datacenter 发电机过去六个月到这一刻的spot price, MoM delta
+
+--------施工--------
+/AI datacenter 施工(PWR拉电网，FIX做液冷机房底座，MTZ拉光纤和装/连接GPU服务器)
+AI datacenter 施工(PWR拉电网，FIX做液冷机房底座，MTZ拉光纤和装/连接GPU服务器)的项目是Cyclical还是Secular
+	- 这些施工(PWR拉电网，FIX做液冷机房底座，MTZ拉光纤和装/连接GPU服务器)项目过去六个月到这一刻的spot price, MoM delta

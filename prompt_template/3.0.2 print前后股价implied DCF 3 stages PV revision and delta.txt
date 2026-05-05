@@ -1,0 +1,12 @@
+{ticker} print前 vs print后
+股价implied的
+	- short term
+	- long term
+	- terminal
+以上每个duration对应的
+	- FCF
+	- NI
+	- GM
+	- present value(PV)
+以及每一项在print前与print后的delta
+*重点分析terminal的GM, FCF，在print前和print后的值和delta (因为terminal PV在DCF模型里占整个EV的一大部分)
