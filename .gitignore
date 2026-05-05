@@ -5,3 +5,6 @@ __pycache__
 *.DS_Store
 *.xlsx
 *.log
+data/*
+ticker_ps_pe_revyoy_ebityoy_eyoy/*
+vix_sell_signal/*
