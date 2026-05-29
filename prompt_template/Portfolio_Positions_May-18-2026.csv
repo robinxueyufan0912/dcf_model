@@ -1,0 +1,35 @@
+﻿Account Number,Account Name,Symbol,Description,Quantity,Last Price,Last Price Change,Current Value,Today's Gain/Loss Dollar,Today's Gain/Loss Percent,Total Gain/Loss Dollar,Total Gain/Loss Percent,Percent Of Account,Cost Basis Total,Average Cost Basis,Type
+Z05460227,Individual,AAPL,APPLE INC,65,$296.05,-$4.18,$19243.25,-$271.70,-1.40%,+$2492.75,+14.88%,2.08%,$16750.50,$257.70,Margin,
+Z05460227,Individual,ADI,ANALOG DEVICES INC COM,31,$418.18,+$0.69,$12963.58,+$21.39,+0.16%,+$2005.65,+18.30%,1.40%,$10957.93,$353.48,Margin,
+Z05460227,Individual,AMZN,AMAZON.COM INC,58,$264.79,+$0.65,$15357.82,+$37.70,+0.24%,+$2040.53,+15.32%,1.66%,$13317.29,$229.61,Margin,
+Z05460227,Individual,BABA,ALIBABA GROUP HOLDING LTD SPON ADS EACH REP 8 ORD SHS,100,$133.4226,+$0.8326,$13342.26,+$83.26,+0.62%,+$482.76,+3.75%,1.44%,$12859.50,$128.60,Margin,
+Z05460227,Individual,CRCL,CIRCLE INTERNET GROUP INC COM CL A,210,$108.88,-$5.12,$22864.80,-$1075.20,-4.50%,+$1300.09,+6.02%,2.47%,$21564.71,$102.69,Margin,
+Z05460227,Individual,CRWD,CROWDSTRIKE HLDGS INC CL A,20,$611.91,+$17.83,$12238.20,+$356.60,+3.00%,+$2820.74,+29.95%,1.32%,$9417.46,$470.87,Margin,
+Z05460227,Individual,FLY,FIREFLY AEROSPACE INC COM,500,$43.145,+$2.715,$21572.50,+$1357.50,+6.71%,+$5884.25,+37.50%,2.33%,$15688.25,$31.38,Margin,
+Z05460227,Individual,GOOG,ALPHABET INC CAP STK CL C,33,$397.54,+$4.22,$13118.82,+$139.26,+1.07%,+$2677.09,+25.63%,1.42%,$10441.73,$316.42,Margin,
+Z05460227,Individual,IBKR,INTERACTIVE BROKERS GROUP INC COM CL A,140,$86.06,-$0.94,$12048.40,-$131.60,-1.09%,+$1268.20,+11.76%,1.30%,$10780.20,$77.00,Margin,
+Z05460227,Individual,LUNR,INTUITIVE MACHINES INC CLASS A COM,590,$33.34,-$0.55,$19670.60,-$324.50,-1.63%,+$2857.21,+16.99%,2.12%,$16813.39,$28.50,Margin,
+Z05460227,Individual,MSFT,MICROSOFT CORP,32,$423.7234,+$1.8034,$13559.14,+$57.70,+0.42%,-$1883.37,-12.20%,1.46%,$15442.51,$482.58,Margin,
+Z05460227,Individual,PL,PLANET LABS PBC COM CL A,440,$41.35,-$0.27,$18194.00,-$118.80,-0.65%,+$5748.48,+46.18%,1.96%,$12445.52,$28.29,Margin,
+Z05460227,Individual,RKLB,ROCKET LAB CORP COM,335,$128.0499,+$3.2799,$42896.71,+$1098.76,+2.62%,+$15669.26,+57.54%,4.63%,$27227.45,$81.28,Margin,
+Z05460227,Individual,TGT,TARGET CORP,142,$122.00,+$0.46,$17324.00,+$65.32,+0.37%,+$1188.31,+7.36%,1.87%,$16135.69,$113.63,Margin,
+Z05460227,Individual,TSLA,TESLA INC COM,17,$408.00,-$14.24,$6936.00,-$242.08,-3.38%,-$1176.03,-14.50%,0.75%,$8112.03,$477.18,Margin,
+Z05460227,Individual,VIRT,VIRTU FINL INC CL A,370,$55.925,+$1.435,$20692.25,+$530.95,+2.63%,+$7170.50,+53.02%,2.23%,$13521.75,$36.55,Margin,
+Z05460227,Individual, -VIX260617C22,VIX JUN 17 2026 $22 CALL (AM),35,$1.42,-$0.26,$4970.00,-$244.05,-4.69%,-$244.05,-4.69%,0.54%,$5214.05,$1.49,Margin,
+Z05460227,Individual, -VIX260617C30,VIX JUN 17 2026 $30 CALL (AM),-35,$0.63,-$0.09,-$2205.00,-$59.05,-2.76%,-$59.05,-2.76%,-0.24%,$2145.95,$0.61,Margin,
+Z05460227,Individual, -VIX260722C20,VIX JUL 22 2026 $20 CALL (AM),10,$3.20,-$0.22,$3200.00,-$220.00,-6.44%,-$339.73,-9.60%,0.35%,$3539.73,$3.54,Margin,
+Z05460227,Individual, -VIX260722C30,VIX JUL 22 2026 $30 CALL (AM),-10,$1.36,-$0.09,-$1360.00,+$90.00,+6.20%,+$170.27,+11.12%,-0.15%,$1530.27,$1.53,Margin,
+Z05460227,Individual, -VIX260819C20,VIX AUG 19 2026 $20 CALL (AM),50,$3.80,-$0.20,$19000.00,-$1000.00,-5.00%,-$1058.65,-5.28%,2.05%,$20058.65,$4.01,Margin,
+Z05460227,Individual, -VIX260819C25,VIX AUG 19 2026 $25 CALL (AM),-30,$2.47,-$0.13,-$7410.00,+$390.00,+5.00%,+$270.81,+3.52%,-0.80%,$7680.81,$2.56,Margin,
+Z05460227,Individual, -VIX260819C30,VIX AUG 19 2026 $30 CALL (AM),-20,$1.76,-$0.09,-$3520.00,+$180.00,+4.86%,+$220.54,+5.89%,-0.38%,$3740.54,$1.87,Margin,
+Z05460227,Individual, -VIX260916C25,VIX SEP 16 2026 $25 CALL (AM),50,$2.77,-$0.13,$13850.00,-$650.00,-4.49%,-$1148.65,-7.66%,1.50%,$14998.65,$3.00,Margin,
+Z05460227,Individual, -VIX260916C35,VIX SEP 16 2026 $35 CALL (AM),-50,$1.59,-$0.03,-$7950.00,+$150.00,+1.85%,+$351.35,+4.23%,-0.86%,$8301.35,$1.66,Margin,
+Z05460227,Individual, -VIX261021C25,VIX OCT 21 2026 $25 CALL (AM),30,$3.15,-$0.10,$9450.00,-$300.00,-3.08%,-$719.19,-7.08%,1.02%,$10169.19,$3.39,Margin,
+Z05460227,Individual, -VIX261021C30,VIX OCT 21 2026 $30 CALL (AM),-30,$2.39,-$0.01,-$7170.00,+$30.00,+0.41%,+$300.81,+4.02%,-0.77%,$7470.81,$2.49,Margin,
+Z05460227,Individual,Pending activity,,,,,$623185.87,,,,,,,,,
+
+"The data and information in this spreadsheet is provided to you solely for your use and is not for distribution. The spreadsheet is provided for informational purposes only, and is not intended to provide advice, nor should it be construed as an offer to sell, a solicitation of an offer to buy or a recommendation for any security by Fidelity or any third party. Data and information shown is based on information known to Fidelity as of the date it was exported and is subject to change. It should not be used in place of your account statements or trade confirmations and is not intended for tax reporting purposes. For more information on the data included in this spreadsheet, including any limitations thereof, go to Fidelity.com."
+
+"Brokerage services are provided by Fidelity Brokerage Services LLC (FBS), 900 Salem Street, Smithfield, RI 02917. Custody and other services provided by National Financial Services LLC (NFS). Both are Fidelity Investment companies and members SIPC, NYSE. Neither FBS nor NFS offer crypto as a direct investment nor provide trading or custody services for such assets."
+
+"Date downloaded May-18-2026 1:43 p.m ET"

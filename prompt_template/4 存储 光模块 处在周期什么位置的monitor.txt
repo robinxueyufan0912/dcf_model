@@ -4,13 +4,13 @@
 --------存储--------
 /HBM
 HBM是Cyclical还是Secular
-	- HBM过去六个月到这一刻的spot price, MoM delta
+	- HBM过去六个月到这一刻的LTA price, spot price, MoM delta
 
 MU是在cycle peak么
 
 /NAND
 NAND是Cyclical还是Secular
-	- NAND过去六个月到这一刻的spot price, MoM delta
+	- NAND过去六个月到这一刻的LTA price, spot price, MoM delta
 
 SNDK是在cycle peak么
 
@@ -23,7 +23,7 @@ STX/WDC是在cycle peak么
 --------光-------
 /1.6T可插拔光模块
 1.6T可插拔光模块是Cyclical还是Secular
-	- 1.6T可插拔光模块过去六个月到这一刻的spot price, MoM delta
+	- 1.6T可插拔光模块过去六个月到这一刻的spot price, MoM delta, 是否以及spot peak, spot peak是否领先于stock peak 1-2 Q, 比如说COHR的股价会在spot peak后1-2 quarter peak.
 
 MRVL是在cycle peak么
 COHR是在cycle peak么
