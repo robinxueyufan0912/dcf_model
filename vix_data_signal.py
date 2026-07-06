@@ -15,6 +15,12 @@ pd.set_option("display.width", None)
 
 # 月份码（如果你后面要生成 VXH5 之类符号会用到）
 MONTH_CODE = {1: "F", 2: "G", 3: "H", 4: "J", 5: "K", 6: "M", 7: "N", 8: "Q", 9: "U", 10: "V", 11: "X", 12: "Z"}
+CBOE_INDEX_HISTORY_URLS = {
+    "VIX": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
+    "VIXEQ": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIXEQ_History.csv",
+}
+VIXEQ_VIX_SPREAD_ARMED_PERCENTILE = 85.0
+VIXEQ_VIX_SPREAD_MIN_ROWS = 252
 
 
 def third_friday(year: int, month: int) -> dt.date:
@@ -227,6 +233,112 @@ def download_cboe_vx_csvs(
     return saved_paths
 
 
+def download_cboe_index_csvs(
+    index_history_urls: dict[str, str],
+    data_dir: str | Path | None = None,
+    *,
+    verify_ssl: bool = True,
+    cafile: str | None = None,
+) -> dict[str, Path]:
+    """Download Cboe index history CSVs to data_dir using index tickers as filenames."""
+    if data_dir is None:
+        data_dir = Path(__file__).resolve().parent / "data" / "indices"
+    data_dir = Path(data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    if not verify_ssl:
+        context = ssl._create_unverified_context()
+    else:
+        if cafile is None:
+            try:
+                import certifi  # type: ignore
+            except ImportError:
+                certifi = None
+            if certifi is not None:
+                cafile = certifi.where()
+        context = ssl.create_default_context(cafile=cafile)
+
+    saved_paths = {}
+    for name, url in index_history_urls.items():
+        out_path = data_dir / f"{name}_History.csv"
+        with urllib.request.urlopen(url, context=context) as resp:
+            out_path.write_bytes(resp.read())
+        saved_paths[name] = out_path
+    return saved_paths
+
+
+def load_cboe_index_history_csv(path: str | Path, index_name: str) -> pd.DataFrame:
+    """Load a Cboe index history CSV and normalize to Trade Date plus one numeric value column."""
+    path = Path(path)
+    raw = pd.read_csv(path)
+    if "DATE" not in raw.columns:
+        raise ValueError(f"{path} is missing DATE column")
+
+    index_name = index_name.upper()
+    if index_name == "VIX":
+        source_col = "CLOSE"
+        value_col = "vix"
+    elif index_name == "VIXEQ":
+        source_col = "VIXEQ"
+        value_col = "vixeq"
+    else:
+        source_col = "CLOSE" if "CLOSE" in raw.columns else index_name
+        value_col = index_name.lower()
+
+    if source_col not in raw.columns:
+        raise ValueError(f"{path} is missing {source_col} column")
+
+    out = pd.DataFrame(
+        {
+            "Trade Date": pd.to_datetime(raw["DATE"], format="%m/%d/%Y", errors="coerce"),
+            value_col: pd.to_numeric(raw[source_col], errors="coerce"),
+        }
+    )
+    out = out.dropna(subset=["Trade Date", value_col]).sort_values("Trade Date").reset_index(drop=True)
+    out["Trade Date"] = out["Trade Date"].dt.strftime("%Y-%m-%d")
+    return out
+
+
+def add_vixeq_vix_spread_signal(
+    vixeq_df: pd.DataFrame,
+    vix_df: pd.DataFrame,
+    *,
+    percentile_threshold: float = VIXEQ_VIX_SPREAD_ARMED_PERCENTILE,
+    lookback_rows: int | None = None,
+    min_rows: int = VIXEQ_VIX_SPREAD_MIN_ROWS,
+) -> pd.DataFrame:
+    """
+    Build VIXEQ-VIX spread features.
+
+    Percentile is inclusive of the current row. By default it uses all history
+    available up to each date, so a record-wide spread prints as 100.
+    """
+    out = vixeq_df.merge(vix_df, on="Trade Date", how="inner")
+    out = out.sort_values("Trade Date").reset_index(drop=True)
+    out["vixeq_vix_spread"] = out["vixeq"] - out["vix"]
+
+    def pct_rank_in_window(arr: np.ndarray) -> float:
+        arr = arr.astype(float)
+        arr = arr[~np.isnan(arr)]
+        if len(arr) < min_rows:
+            return np.nan
+        v = arr[-1]
+        return float(np.mean(arr <= v) * 100.0)
+
+    if lookback_rows is None:
+        out["vixeq_vix_spread_pct"] = out["vixeq_vix_spread"].expanding(min_periods=min_rows).apply(pct_rank_in_window, raw=True)
+    else:
+        min_periods = min(min_rows, lookback_rows)
+        out["vixeq_vix_spread_pct"] = out["vixeq_vix_spread"].rolling(window=lookback_rows, min_periods=min_periods).apply(
+            pct_rank_in_window,
+            raw=True,
+        )
+
+    out["vixeq_vix_spread_record_high"] = out["vixeq_vix_spread"] >= out["vixeq_vix_spread"].cummax()
+    out["vixeq_vix_spread_armed"] = out["vixeq_vix_spread_pct"] > percentile_threshold
+    return out
+
+
 def contract_month_to_futures_label(contract_month: str) -> str:
     """Convert YYYY-MM to VX futures label like 'J (Apr 2025)'."""
     year, month = (int(x) for x in contract_month.split("-"))
@@ -292,19 +404,24 @@ def add_volume_metrics_rows_incl_today_strict(
     out["vol_ge_90pct_last_5days"] = out["volume_pct"].rolling(window=5, min_periods=5).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
     out["vol_ge_90pct_last_10days"] = out["volume_pct"].rolling(window=10, min_periods=10).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
 
-    # Risk-off score (0-7)
-    # risk_off_score (0-7): sum of all 7 boolean signals
-    # risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (6-7)
-    out["risk_off_score"] = (
-        out["close_gt_ma50"].astype(int)
-        + out["close_gt_ma20"].astype(int)
-        + out["ma20_rising"].astype(int)
-        + out["vol_ge_1.85x_ma50"].astype(int)
-        + out["vol_ge_90pct"].astype(int)
-        + (out["vol_ge_90pct_last_5days"] >= 2).astype(int)
-        + (out["vol_ge_90pct_last_10days"] >= 3).astype(int)
-    )
-    out["risk_off_level"] = pd.cut(out["risk_off_score"], bins=[-1, 1, 3, 5, 7], labels=["GREEN", "YELLOW", "ORANGE", "RED"])
+    # Risk-off score starts with 7 VX price/volume signals and includes VIXEQ-VIX when present.
+    risk_off_components = [
+        out["close_gt_ma50"],
+        out["close_gt_ma20"],
+        out["ma20_rising"],
+        out["vol_ge_1.85x_ma50"],
+        out["vol_ge_90pct"],
+        out["vol_ge_90pct_last_5days"] >= 2,
+        out["vol_ge_90pct_last_10days"] >= 3,
+    ]
+    if "vixeq_vix_spread_armed" in out.columns:
+        risk_off_components.append(out["vixeq_vix_spread_armed"])
+
+    score = pd.Series(0, index=out.index, dtype="int64")
+    for component in risk_off_components:
+        score = score + component.fillna(False).astype(bool).astype(int)
+    out["risk_off_score"] = score
+    out["risk_off_level"] = pd.cut(out["risk_off_score"], bins=[-1, 1, 3, 5, np.inf], labels=["GREEN", "YELLOW", "ORANGE", "RED"])
 
     out = out.reset_index(drop=True)
     return out
@@ -429,11 +546,18 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         "CFE_VX_X6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-11-18.csv",
         "CFE_VX_Z6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-12-16.csv",
     }
-    download_cboe_vx_csvs(cboe_vx_futures_hlocv_data)
+    root_dir = Path(__file__).resolve().parent
+    data_dir = root_dir / "data"
+    index_data_dir = data_dir / "indices"
+
+    download_cboe_vx_csvs(cboe_vx_futures_hlocv_data, data_dir=data_dir)
+    index_paths = download_cboe_index_csvs(CBOE_INDEX_HISTORY_URLS, data_dir=index_data_dir)
+    df_vixeq = load_cboe_index_history_csv(index_paths["VIXEQ"], "VIXEQ")
+    df_vix = load_cboe_index_history_csv(index_paths["VIX"], "VIX")
+    df_vixeq_vix_spread_features = add_vixeq_vix_spread_signal(df_vixeq, df_vix)
 
     # ===== Create Dataframe, for each trading day, the VXCurrent and its HLOCV, plus features =====
     print_tail_num_rows = 100
-    data_dir = Path(__file__).resolve().parent / "data"
     all_data = load_vx_csvs(data_dir)
     df_vxcurrent_hlocv = rows_for_vxcurrent_map(m, all_data, strict=False)
 
@@ -457,6 +581,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     df_vxnext_hlocv = df_vxnext_hlocv.rename(columns=next_cols_rename)
 
     df_vxcurrent_vxnext_hlocv = df_vxcurrent_hlocv.merge(df_vxnext_hlocv, on="Trade Date", how="left")
+    df_vxcurrent_vxnext_hlocv = df_vxcurrent_vxnext_hlocv.merge(df_vixeq_vix_spread_features, on="Trade Date", how="left")
 
     df_vxcurrent_vxnext_hlocv["front_next_OI"] = pd.to_numeric(df_vxcurrent_vxnext_hlocv["Open Interest"], errors="coerce").fillna(0) + pd.to_numeric(
         df_vxcurrent_vxnext_hlocv["next_Open Interest"], errors="coerce"
@@ -493,10 +618,27 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         "Trade Date", "Futures", "Close", "Change", 
         "close_gt_ma50", "ma20_rising","close_gt_ma20", # VX Price signal
         "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days", # VX Volume signal
-        "risk_off_score", "risk_off_level", # VX risk_off_score and risk_off_level
+        "vixeq", "vix", "vixeq_vix_spread", "vixeq_vix_spread_pct", "vixeq_vix_spread_record_high", "vixeq_vix_spread_armed", # VIXEQ-VIX dispersion signal
+        "risk_off_score", "risk_off_level", # Combined risk_off_score and risk_off_level
         # "front_next_OI_delta",
     ]
     print(df_vxcurrent_vxnext_hlocv_features[selected_col].tail(print_tail_num_rows))
+    print("/VIXEQ-VIX spread signal latest:")
+    print(
+        df_vxcurrent_vxnext_hlocv_features[
+            [
+                "Trade Date",
+                "vixeq",
+                "vix",
+                "vixeq_vix_spread",
+                "vixeq_vix_spread_pct",
+                "vixeq_vix_spread_record_high",
+                "vixeq_vix_spread_armed",
+            ]
+        ]
+        .dropna(subset=["vixeq_vix_spread"])
+        .tail(10)
+    )
 
     ### Print selected date range for df_vxcurrent_vxnext_hlocv_features
     # 2025-11-03 - 11-04, 2025 fed rate not reduce drawdown
@@ -505,8 +647,9 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     # print_date_range(df_vxcurrent_vxnext_hlocv_features, "2026-02-01", "2026-04-01", cols=selected_col, label="vxcurrent_features") # 2026-03-02, 2026 US Iran war drawdown
 
     print(f"Today is {end_date}")
-    print("# risk_off_score (0-7): sum of all 7 boolean signals")
-    print("# risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (6-7)")
+    print("# risk_off_score (0-8): 7 VX price/volume signals + VIXEQ-VIX spread armed signal")
+    print("# risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (>=6)")
+    print(f"# vixeq_vix_spread_armed: VIXEQ-VIX spread percentile > {VIXEQ_VIX_SPREAD_ARMED_PERCENTILE:.0f}")
 
 
 # 示例
