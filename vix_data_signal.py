@@ -21,6 +21,7 @@ CBOE_INDEX_HISTORY_URLS = {
 }
 VIXEQ_VIX_SPREAD_ARMED_PERCENTILE = 85.0
 VIXEQ_VIX_SPREAD_MIN_ROWS = 252
+# VIXEQ_RHO_ARMED_THRESHOLD = 0.15
 
 
 def third_friday(year: int, month: int) -> dt.date:
@@ -234,11 +235,7 @@ def download_cboe_vx_csvs(
 
 
 def download_cboe_index_csvs(
-    index_history_urls: dict[str, str],
-    data_dir: str | Path | None = None,
-    *,
-    verify_ssl: bool = True,
-    cafile: str | None = None,
+    index_history_urls: dict[str, str], data_dir: str | Path | None = None, *, verify_ssl: bool = True, cafile: str | None = None
 ) -> dict[str, Path]:
     """Download Cboe index history CSVs to data_dir using index tickers as filenames."""
     if data_dir is None:
@@ -289,10 +286,7 @@ def load_cboe_index_history_csv(path: str | Path, index_name: str) -> pd.DataFra
         raise ValueError(f"{path} is missing {source_col} column")
 
     out = pd.DataFrame(
-        {
-            "Trade Date": pd.to_datetime(raw["DATE"], format="%m/%d/%Y", errors="coerce"),
-            value_col: pd.to_numeric(raw[source_col], errors="coerce"),
-        }
+        {"Trade Date": pd.to_datetime(raw["DATE"], format="%m/%d/%Y", errors="coerce"), value_col: pd.to_numeric(raw[source_col], errors="coerce")}
     )
     out = out.dropna(subset=["Trade Date", value_col]).sort_values("Trade Date").reset_index(drop=True)
     out["Trade Date"] = out["Trade Date"].dt.strftime("%Y-%m-%d")
@@ -304,11 +298,12 @@ def add_vixeq_vix_spread_signal(
     vix_df: pd.DataFrame,
     *,
     percentile_threshold: float = VIXEQ_VIX_SPREAD_ARMED_PERCENTILE,
+    # rho_threshold: float = VIXEQ_RHO_ARMED_THRESHOLD,
     lookback_rows: int | None = None,
     min_rows: int = VIXEQ_VIX_SPREAD_MIN_ROWS,
 ) -> pd.DataFrame:
     """
-    Build VIXEQ-VIX spread features.
+    Build VIX vs VIXEQ structural risk-off features.
 
     Percentile is inclusive of the current row. By default it uses all history
     available up to each date, so a record-wide spread prints as 100.
@@ -326,16 +321,17 @@ def add_vixeq_vix_spread_signal(
         return float(np.mean(arr <= v) * 100.0)
 
     if lookback_rows is None:
-        out["vixeq_vix_spread_pct"] = out["vixeq_vix_spread"].expanding(min_periods=min_rows).apply(pct_rank_in_window, raw=True)
+        spread_pct = out["vixeq_vix_spread"].expanding(min_periods=min_rows).apply(pct_rank_in_window, raw=True)
     else:
         min_periods = min(min_rows, lookback_rows)
-        out["vixeq_vix_spread_pct"] = out["vixeq_vix_spread"].rolling(window=lookback_rows, min_periods=min_periods).apply(
-            pct_rank_in_window,
-            raw=True,
-        )
+        spread_pct = out["vixeq_vix_spread"].rolling(window=lookback_rows, min_periods=min_periods).apply(pct_rank_in_window, raw=True)
 
-    out["vixeq_vix_spread_record_high"] = out["vixeq_vix_spread"] >= out["vixeq_vix_spread"].cummax()
-    out["vixeq_vix_spread_armed"] = out["vixeq_vix_spread_pct"] > percentile_threshold
+    out["spread_pct"] = spread_pct.round(1)
+    spread_armed = spread_pct > percentile_threshold
+    # rho is the standard correlation symbol. This is a VIXEQ-derived proxy, not official Cboe COR1M/COR3M.
+    # out["rho"] = np.where(out["vixeq"] > 0, (out["vix"] / out["vixeq"]) ** 2, np.nan)
+    # out["rho_armed"] = out["rho"] < rho_threshold
+    out["vixeq_risk_off_level"] = np.select([spread_armed.fillna(False)], ["RED"], default="GREEN")
     return out
 
 
@@ -404,7 +400,7 @@ def add_volume_metrics_rows_incl_today_strict(
     out["vol_ge_90pct_last_5days"] = out["volume_pct"].rolling(window=5, min_periods=5).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
     out["vol_ge_90pct_last_10days"] = out["volume_pct"].rolling(window=10, min_periods=10).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
 
-    # Risk-off score starts with 7 VX price/volume signals and includes VIXEQ-VIX when present.
+    # risk_off_score uses VX current + VX next price/volume conditions only.
     risk_off_components = [
         out["close_gt_ma50"],
         out["close_gt_ma20"],
@@ -414,8 +410,6 @@ def add_volume_metrics_rows_incl_today_strict(
         out["vol_ge_90pct_last_5days"] >= 2,
         out["vol_ge_90pct_last_10days"] >= 3,
     ]
-    if "vixeq_vix_spread_armed" in out.columns:
-        risk_off_components.append(out["vixeq_vix_spread_armed"])
 
     score = pd.Series(0, index=out.index, dtype="int64")
     for component in risk_off_components:
@@ -557,7 +551,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     df_vixeq_vix_spread_features = add_vixeq_vix_spread_signal(df_vixeq, df_vix)
 
     # ===== Create Dataframe, for each trading day, the VXCurrent and its HLOCV, plus features =====
-    print_tail_num_rows = 100
+    print_tail_num_rows = 50
     all_data = load_vx_csvs(data_dir)
     df_vxcurrent_hlocv = rows_for_vxcurrent_map(m, all_data, strict=False)
 
@@ -608,21 +602,28 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         lookback_rows=252,  # one year has 252 trading days
         ma_window=50,
     )
-    df_vxcurrent_vxnext_hlocv_features.to_csv(f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv")
 
-    # ===== VXCurrent =====
+    # ===== df_vxcurrent_vxnext_hlocv_features =====
     print("/df_vxcurrent_vxnext_hlocv_features.columns:")
     print(df_vxcurrent_vxnext_hlocv_features.columns)
     print("/df_vxcurrent_vxnext_hlocv_features this month:")
+    # fmt: off
+    # yapf: disable
     selected_col = [
-        "Trade Date", "Futures", "Close", "Change", 
-        "close_gt_ma50", "ma20_rising","close_gt_ma20", # VX Price signal
-        "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days", # VX Volume signal
-        "vixeq", "vix", "vixeq_vix_spread", "vixeq_vix_spread_pct", "vixeq_vix_spread_record_high", "vixeq_vix_spread_armed", # VIXEQ-VIX dispersion signal
-        "risk_off_score", "risk_off_level", # Combined risk_off_score and risk_off_level
+        "Trade Date", "Futures",
+        "close_gt_ma50", "ma20_rising", "close_gt_ma20",  # VX Price signal
+        "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days",  # VX Volume signal
+        "risk_off_score", "risk_off_level",  # VX current+next risk_off_score and risk_off_level
+        "vixeq", "vix", "vixeq_vix_spread", "spread_pct",  # VIXEQ-VIX dispersion signal
+        # "rho", "rho_armed",  # rho proxy disabled for now
+        "vixeq_risk_off_level",  # VIXEQ risk_off_level
         # "front_next_OI_delta",
     ]
+    # yapf: enable
+    # fmt: on
     print(df_vxcurrent_vxnext_hlocv_features[selected_col].tail(print_tail_num_rows))
+    df_vxcurrent_vxnext_hlocv_features[selected_col].tail(100).to_csv(f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv")
+
     print("/VIXEQ-VIX spread signal latest:")
     print(
         df_vxcurrent_vxnext_hlocv_features[
@@ -631,9 +632,10 @@ def run_vx_eod_report(end_date: dt.date) -> None:
                 "vixeq",
                 "vix",
                 "vixeq_vix_spread",
-                "vixeq_vix_spread_pct",
-                "vixeq_vix_spread_record_high",
-                "vixeq_vix_spread_armed",
+                "spread_pct",
+                # "rho",
+                # "rho_armed",
+                "vixeq_risk_off_level",
             ]
         ]
         .dropna(subset=["vixeq_vix_spread"])
@@ -647,9 +649,10 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     # print_date_range(df_vxcurrent_vxnext_hlocv_features, "2026-02-01", "2026-04-01", cols=selected_col, label="vxcurrent_features") # 2026-03-02, 2026 US Iran war drawdown
 
     print(f"Today is {end_date}")
-    print("# risk_off_score (0-8): 7 VX price/volume signals + VIXEQ-VIX spread armed signal")
+    print("# risk_off_score (0-7): VX current+next price/volume signals")
     print("# risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (>=6)")
-    print(f"# vixeq_vix_spread_armed: VIXEQ-VIX spread percentile > {VIXEQ_VIX_SPREAD_ARMED_PERCENTILE:.0f}")
+    print(f"# vixeq_risk_off_level: RED when spread_pct > {VIXEQ_VIX_SPREAD_ARMED_PERCENTILE:.0f}, else GREEN")
+    # print(f"# rho_armed: (VIX/VIXEQ)^2 < {VIXEQ_RHO_ARMED_THRESHOLD:.2f}")
 
 
 # 示例
