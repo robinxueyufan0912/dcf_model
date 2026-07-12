@@ -18,6 +18,7 @@ MONTH_CODE = {1: "F", 2: "G", 3: "H", 4: "J", 5: "K", 6: "M", 7: "N", 8: "Q", 9:
 CBOE_INDEX_HISTORY_URLS = {
     "VIX": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
     "VIXEQ": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIXEQ_History.csv",
+    "VXN": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VXN_History.csv",
 }
 VIXEQ_VIX_SPREAD_ARMED_PERCENTILE = 85.0
 VIXEQ_VIX_SPREAD_MIN_ROWS = 252
@@ -293,6 +294,26 @@ def load_cboe_index_history_csv(path: str | Path, index_name: str) -> pd.DataFra
     return out
 
 
+def add_vxn_ma20_signal(vxn_df: pd.DataFrame, *, ma_window: int = 20) -> pd.DataFrame:
+    """Add VXN level and 20-trading-day trend features."""
+    required_cols = {"Trade Date", "vxn"}
+    missing_cols = required_cols.difference(vxn_df.columns)
+    if missing_cols:
+        raise ValueError(f"vxn_df is missing required columns: {sorted(missing_cols)}")
+    if ma_window < 1:
+        raise ValueError("ma_window must be at least 1")
+
+    out = vxn_df.copy()
+    out["vxn"] = pd.to_numeric(out["vxn"], errors="coerce")
+    out = out.sort_values("Trade Date").reset_index(drop=True)
+    out["vxn_ma20"] = out["vxn"].rolling(ma_window, min_periods=ma_window).mean()
+    out["vxn_gt_ma20"] = out["vxn"] > out["vxn_ma20"]
+    out["vxn_ma20_rising"] = out["vxn_ma20"].diff() > 0
+    vxn_risk_off = out["vxn_gt_ma20"] & out["vxn_ma20_rising"]
+    out["vxn_risk_off_level"] = np.where(vxn_risk_off, "RED", "GREEN")
+    return out
+
+
 def add_vixeq_vix_spread_signal(
     vixeq_df: pd.DataFrame,
     vix_df: pd.DataFrame,
@@ -548,10 +569,12 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     index_paths = download_cboe_index_csvs(CBOE_INDEX_HISTORY_URLS, data_dir=index_data_dir)
     df_vixeq = load_cboe_index_history_csv(index_paths["VIXEQ"], "VIXEQ")
     df_vix = load_cboe_index_history_csv(index_paths["VIX"], "VIX")
+    df_vxn = load_cboe_index_history_csv(index_paths["VXN"], "VXN")
+    df_vxn_features = add_vxn_ma20_signal(df_vxn)
     df_vixeq_vix_spread_features = add_vixeq_vix_spread_signal(df_vixeq, df_vix)
 
     # ===== Create Dataframe, for each trading day, the VXCurrent and its HLOCV, plus features =====
-    print_tail_num_rows = 50
+    print_tail_num_rows = 30
     all_data = load_vx_csvs(data_dir)
     df_vxcurrent_hlocv = rows_for_vxcurrent_map(m, all_data, strict=False)
 
@@ -576,6 +599,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
 
     df_vxcurrent_vxnext_hlocv = df_vxcurrent_hlocv.merge(df_vxnext_hlocv, on="Trade Date", how="left")
     df_vxcurrent_vxnext_hlocv = df_vxcurrent_vxnext_hlocv.merge(df_vixeq_vix_spread_features, on="Trade Date", how="left")
+    df_vxcurrent_vxnext_hlocv = df_vxcurrent_vxnext_hlocv.merge(df_vxn_features, on="Trade Date", how="left")
 
     df_vxcurrent_vxnext_hlocv["front_next_OI"] = pd.to_numeric(df_vxcurrent_vxnext_hlocv["Open Interest"], errors="coerce").fillna(0) + pd.to_numeric(
         df_vxcurrent_vxnext_hlocv["next_Open Interest"], errors="coerce"
@@ -617,6 +641,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         "vixeq", "vix", "vixeq_vix_spread", "spread_pct",  # VIXEQ-VIX dispersion signal
         # "rho", "rho_armed",  # rho proxy disabled for now
         "vixeq_risk_off_level",  # VIXEQ risk_off_level
+        "vxn", "vxn_gt_ma20", "vxn_ma20_rising", "vxn_risk_off_level",  # Nasdaq-100 volatility signal
         # "front_next_OI_delta",
     ]
     # yapf: enable
@@ -652,6 +677,9 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     print("# risk_off_score (0-7): VX current+next price/volume signals")
     print("# risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (>=6)")
     print(f"# vixeq_risk_off_level: RED when spread_pct > {VIXEQ_VIX_SPREAD_ARMED_PERCENTILE:.0f}, else GREEN")
+    print("# vxn_gt_ma20: VXN close is above its 20-trading-day moving average")
+    print("# vxn_ma20_rising: VXN MA20 is higher than on the prior trading day")
+    print("# vxn_risk_off_level: RED when vxn_gt_ma20 and vxn_ma20_rising are both True, else GREEN")
     # print(f"# rho_armed: (VIX/VIXEQ)^2 < {VIXEQ_RHO_ARMED_THRESHOLD:.2f}")
 
 
