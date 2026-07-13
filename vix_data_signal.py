@@ -19,9 +19,11 @@ CBOE_INDEX_HISTORY_URLS = {
     "VIX": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
     "VIXEQ": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIXEQ_History.csv",
     "VXN": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VXN_History.csv",
+    "VXSMH": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VXSMH_History.csv",
 }
 VIXEQ_VIX_SPREAD_ARMED_PERCENTILE = 85.0
 VIXEQ_VIX_SPREAD_MIN_ROWS = 252
+VXSMH_PERCENTILE_LOOKBACK = 252
 # VIXEQ_RHO_ARMED_THRESHOLD = 0.15
 
 
@@ -314,6 +316,29 @@ def add_vxn_ma20_signal(vxn_df: pd.DataFrame, *, ma_window: int = 20) -> pd.Data
     return out
 
 
+def add_vxsmh_percentile_signal(vxsmh_df: pd.DataFrame, *, lookback_rows: int = VXSMH_PERCENTILE_LOOKBACK) -> pd.DataFrame:
+    """Add VXSMH and its current-inclusive percentile over up to the trailing lookback rows."""
+    required_cols = {"Trade Date", "vxsmh"}
+    missing_cols = required_cols.difference(vxsmh_df.columns)
+    if missing_cols:
+        raise ValueError(f"vxsmh_df is missing required columns: {sorted(missing_cols)}")
+    if lookback_rows < 1:
+        raise ValueError("lookback_rows must be at least 1")
+
+    out = vxsmh_df.copy()
+    out["vxsmh"] = pd.to_numeric(out["vxsmh"], errors="coerce")
+    out = out.sort_values("Trade Date").reset_index(drop=True)
+
+    def pct_rank_in_window(arr: np.ndarray) -> float:
+        arr = arr.astype(float)
+        arr = arr[~np.isnan(arr)]
+        current_value = arr[-1]
+        return float(np.mean(arr <= current_value) * 100.0)
+
+    out["vxsmh_pct"] = out["vxsmh"].rolling(window=lookback_rows, min_periods=1).apply(pct_rank_in_window, raw=True).round(1)
+    return out
+
+
 def add_vixeq_vix_spread_signal(
     vixeq_df: pd.DataFrame,
     vix_df: pd.DataFrame,
@@ -571,6 +596,8 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     df_vix = load_cboe_index_history_csv(index_paths["VIX"], "VIX")
     df_vxn = load_cboe_index_history_csv(index_paths["VXN"], "VXN")
     df_vxn_features = add_vxn_ma20_signal(df_vxn)
+    df_vxsmh = load_cboe_index_history_csv(index_paths["VXSMH"], "VXSMH")
+    df_vxsmh_features = add_vxsmh_percentile_signal(df_vxsmh)
     df_vixeq_vix_spread_features = add_vixeq_vix_spread_signal(df_vixeq, df_vix)
 
     # ===== Create Dataframe, for each trading day, the VXCurrent and its HLOCV, plus features =====
@@ -600,6 +627,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     df_vxcurrent_vxnext_hlocv = df_vxcurrent_hlocv.merge(df_vxnext_hlocv, on="Trade Date", how="left")
     df_vxcurrent_vxnext_hlocv = df_vxcurrent_vxnext_hlocv.merge(df_vixeq_vix_spread_features, on="Trade Date", how="left")
     df_vxcurrent_vxnext_hlocv = df_vxcurrent_vxnext_hlocv.merge(df_vxn_features, on="Trade Date", how="left")
+    df_vxcurrent_vxnext_hlocv = df_vxcurrent_vxnext_hlocv.merge(df_vxsmh_features, on="Trade Date", how="left")
 
     df_vxcurrent_vxnext_hlocv["front_next_OI"] = pd.to_numeric(df_vxcurrent_vxnext_hlocv["Open Interest"], errors="coerce").fillna(0) + pd.to_numeric(
         df_vxcurrent_vxnext_hlocv["next_Open Interest"], errors="coerce"
@@ -628,25 +656,60 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     )
 
     # ===== df_vxcurrent_vxnext_hlocv_features =====
-    print("/df_vxcurrent_vxnext_hlocv_features.columns:")
-    print(df_vxcurrent_vxnext_hlocv_features.columns)
+    print(f"/df_vxcurrent_vxnext_hlocv_features: {len(df_vxcurrent_vxnext_hlocv_features.columns)} columns")
     print("/df_vxcurrent_vxnext_hlocv_features this month:")
     # fmt: off
     # yapf: disable
     selected_col = [
         "Trade Date", "Futures",
-        "close_gt_ma50", "ma20_rising", "close_gt_ma20",  # VX Price signal
+        "close_gt_ma20", "ma20_rising", "close_gt_ma50",  # VX Price signal
         "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days",  # VX Volume signal
         "risk_off_score", "risk_off_level",  # VX current+next risk_off_score and risk_off_level
         "vixeq", "vix", "vixeq_vix_spread", "spread_pct",  # VIXEQ-VIX dispersion signal
         # "rho", "rho_armed",  # rho proxy disabled for now
         "vixeq_risk_off_level",  # VIXEQ risk_off_level
         "vxn", "vxn_gt_ma20", "vxn_ma20_rising", "vxn_risk_off_level",  # Nasdaq-100 volatility signal
+        "vxsmh", "vxsmh_pct",  # Semiconductor ETF volatility signal
         # "front_next_OI_delta",
     ]
     # yapf: enable
     # fmt: on
-    print(df_vxcurrent_vxnext_hlocv_features[selected_col].tail(print_tail_num_rows))
+
+    print_col_aliases = {
+        "Trade Date": "Date",
+        "Futures": "VX1",
+        "close_gt_ma20": "VX1>MA20",
+        "ma20_rising": "VX1_MA20+",
+        "close_gt_ma50": "VX1>MA50",
+        "vol_ge_1.85x_ma50": "Vol1.85",
+        "vol_ge_90pct": "VolP90",
+        "vol_ge_90pct_last_5days": "P90_l5d",
+        "vol_ge_90pct_last_10days": "P90_l10d",
+        "risk_off_score": "Score",
+        "risk_off_level": "VX1_Lvl",
+        "vixeq": "VIXEQ",
+        "vix": "VIX",
+        "vixeq_vix_spread": "EQ-VIX",
+        "spread_pct": "SprdPct",
+        "vixeq_risk_off_level": "EQ_Lvl",
+        "vxn": "VXN",
+        "vxn_gt_ma20": "VXN>MA20",
+        "vxn_ma20_rising": "VXN_MA20+",
+        "vxn_risk_off_level": "VXN_Lvl",
+        "vxsmh": "VXSMH",
+        "vxsmh_pct": "VXSMH_Pct",
+    }
+    print_bool_cols = ["close_gt_ma20", "ma20_rising", "close_gt_ma50", "vol_ge_1.85x_ma50", "vol_ge_90pct", "vxn_gt_ma20", "vxn_ma20_rising"]
+    feature_display = df_vxcurrent_vxnext_hlocv_features[selected_col].tail(print_tail_num_rows).copy().rename(columns=print_col_aliases)
+    for source_col in print_bool_cols:
+        display_col = print_col_aliases[source_col]
+        feature_display[display_col] = feature_display[display_col].map(lambda value: "?" if pd.isna(value) else ("Y" if bool(value) else "-"))
+    for source_col in ["vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days"]:
+        display_col = print_col_aliases[source_col]
+        feature_display[display_col] = pd.to_numeric(feature_display[display_col], errors="coerce").round().astype("Int64")
+
+    print("# Y=True, empty=False, ?=missing")
+    print(feature_display.to_string(index=False))
     df_vxcurrent_vxnext_hlocv_features[selected_col].tail(100).to_csv(f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv")
 
     print("/VIXEQ-VIX spread signal latest:")
@@ -680,6 +743,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     print("# vxn_gt_ma20: VXN close is above its 20-trading-day moving average")
     print("# vxn_ma20_rising: VXN MA20 is higher than on the prior trading day")
     print("# vxn_risk_off_level: RED when vxn_gt_ma20 and vxn_ma20_rising are both True, else GREEN")
+    print(f"# vxsmh_pct: VXSMH current-inclusive percentile over up to the trailing {VXSMH_PERCENTILE_LOOKBACK} trading days")
     # print(f"# rho_armed: (VIX/VIXEQ)^2 < {VIXEQ_RHO_ARMED_THRESHOLD:.2f}")
 
 
