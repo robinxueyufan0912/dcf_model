@@ -24,6 +24,7 @@ CBOE_INDEX_HISTORY_URLS = {
 VIXEQ_VIX_SPREAD_ARMED_PERCENTILE = 85.0
 VIXEQ_VIX_SPREAD_MIN_ROWS = 252
 VXSMH_PERCENTILE_LOOKBACK = 252
+VXSMH_RISK_OFF_PERCENTILE = 85.0
 # VIXEQ_RHO_ARMED_THRESHOLD = 0.15
 
 
@@ -316,14 +317,18 @@ def add_vxn_ma20_signal(vxn_df: pd.DataFrame, *, ma_window: int = 20) -> pd.Data
     return out
 
 
-def add_vxsmh_percentile_signal(vxsmh_df: pd.DataFrame, *, lookback_rows: int = VXSMH_PERCENTILE_LOOKBACK) -> pd.DataFrame:
-    """Add VXSMH and its current-inclusive percentile over up to the trailing lookback rows."""
+def add_vxsmh_percentile_signal(
+    vxsmh_df: pd.DataFrame, *, lookback_rows: int = VXSMH_PERCENTILE_LOOKBACK, risk_off_percentile: float = VXSMH_RISK_OFF_PERCENTILE
+) -> pd.DataFrame:
+    """Add VXSMH, its trailing percentile, and the percentile-based risk level."""
     required_cols = {"Trade Date", "vxsmh"}
     missing_cols = required_cols.difference(vxsmh_df.columns)
     if missing_cols:
         raise ValueError(f"vxsmh_df is missing required columns: {sorted(missing_cols)}")
     if lookback_rows < 1:
         raise ValueError("lookback_rows must be at least 1")
+    if not 0.0 <= risk_off_percentile <= 100.0:
+        raise ValueError("risk_off_percentile must be between 0 and 100")
 
     out = vxsmh_df.copy()
     out["vxsmh"] = pd.to_numeric(out["vxsmh"], errors="coerce")
@@ -336,6 +341,7 @@ def add_vxsmh_percentile_signal(vxsmh_df: pd.DataFrame, *, lookback_rows: int = 
         return float(np.mean(arr <= current_value) * 100.0)
 
     out["vxsmh_pct"] = out["vxsmh"].rolling(window=lookback_rows, min_periods=1).apply(pct_rank_in_window, raw=True).round(1)
+    out["vxsmh_risk_off_level"] = np.where(out["vxsmh_pct"] > risk_off_percentile, "RED", "GREEN")
     return out
 
 
@@ -663,13 +669,13 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     selected_col = [
         "Trade Date", "Futures",
         "close_gt_ma20", "ma20_rising", "close_gt_ma50",  # VX Price signal
-        "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days",  # VX Volume signal
+        "volume_pct", "vol_ge_1.85x_ma50", "vol_ge_90pct", "vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days",  # VX Volume signal
         "risk_off_score", "risk_off_level",  # VX current+next risk_off_score and risk_off_level
         "vixeq", "vix", "vixeq_vix_spread", "spread_pct",  # VIXEQ-VIX dispersion signal
         # "rho", "rho_armed",  # rho proxy disabled for now
         "vixeq_risk_off_level",  # VIXEQ risk_off_level
         "vxn", "vxn_gt_ma20", "vxn_ma20_rising", "vxn_risk_off_level",  # Nasdaq-100 volatility signal
-        "vxsmh", "vxsmh_pct",  # Semiconductor ETF volatility signal
+        "vxsmh", "vxsmh_pct", "vxsmh_risk_off_level",  # Semiconductor ETF volatility signal
         # "front_next_OI_delta",
     ]
     # yapf: enable
@@ -681,6 +687,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         "close_gt_ma20": "VX1>MA20",
         "ma20_rising": "VX1_MA20+",
         "close_gt_ma50": "VX1>MA50",
+        "volume_pct": "VX1_VolPct",
         "vol_ge_1.85x_ma50": "Vol1.85",
         "vol_ge_90pct": "VolP90",
         "vol_ge_90pct_last_5days": "P90_l5d",
@@ -698,6 +705,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         "vxn_risk_off_level": "VXN_Lvl",
         "vxsmh": "VXSMH",
         "vxsmh_pct": "VXSMH_Pct",
+        "vxsmh_risk_off_level": "VXSMH_Lvl",
     }
     print_bool_cols = ["close_gt_ma20", "ma20_rising", "close_gt_ma50", "vol_ge_1.85x_ma50", "vol_ge_90pct", "vxn_gt_ma20", "vxn_ma20_rising"]
     feature_display = df_vxcurrent_vxnext_hlocv_features[selected_col].tail(print_tail_num_rows).copy().rename(columns=print_col_aliases)
@@ -707,11 +715,15 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     for source_col in ["vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days"]:
         display_col = print_col_aliases[source_col]
         feature_display[display_col] = pd.to_numeric(feature_display[display_col], errors="coerce").round().astype("Int64")
+    feature_display["VX1_VolPct"] = pd.to_numeric(feature_display["VX1_VolPct"], errors="coerce").round(1)
 
     print("# Y=True, empty=False, ?=missing")
     print(feature_display.to_string(index=False))
     df_vxcurrent_vxnext_hlocv_features[selected_col].tail(100).to_csv(f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv")
 
+    print(
+        "vx1/vx2爆量是risk-off signal的原理: 机构觉得指数要跌, 买入spx put/vix call, dealer卖出vix call, 为保持delta neutral, dealer买入vix call同一到期日的vx1/vx2 contract"
+    )
     print("/VIXEQ-VIX spread signal latest:")
     print(
         df_vxcurrent_vxnext_hlocv_features[
@@ -744,6 +756,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     print("# vxn_ma20_rising: VXN MA20 is higher than on the prior trading day")
     print("# vxn_risk_off_level: RED when vxn_gt_ma20 and vxn_ma20_rising are both True, else GREEN")
     print(f"# vxsmh_pct: VXSMH current-inclusive percentile over up to the trailing {VXSMH_PERCENTILE_LOOKBACK} trading days")
+    print(f"# vxsmh_risk_off_level: RED when vxsmh_pct > {VXSMH_RISK_OFF_PERCENTILE:.0f}, else GREEN")
     # print(f"# rho_armed: (VIX/VIXEQ)^2 < {VIXEQ_RHO_ARMED_THRESHOLD:.2f}")
 
 
