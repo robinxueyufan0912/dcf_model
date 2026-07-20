@@ -8,9 +8,10 @@ vix_options_flow.py — risk-off 期权流量模块(精简版)
     不单独成特征, 仅用于确认买盘方向是否单边)。
 
 原理:
-    L1: 机构对冲指数下行 -> 买 SPX put -> 推高隐波 -> VIX 被"算"高。
-        SPX 全链 ~64% 是 0DTE 日内噪音, 必须按"保护区桶"过滤:
-        DTE 21-90 天 + 虚值 3%-20% 的 put(教科书式崩盘保护的栖息地)。
+    L1: 机构对冲指数下行 -> 买 SPX put。按期限分三桶解读(见 SPX_BUCKETS):
+        战术桶(3-22DTE)=近端事件对冲; VIX窗(23-37DTE)=唯一直接进入VIX计算的
+        期限段(官方方法论: >23天且<37天, 插值出恒定30天波动率);
+        结构桶(38-90DTE)=中期战略保护。SPX全链~64%是0DTE噪音, 已排除。
     L2: 机构买 VIX call -> dealer 卖 call -> 为 delta neutral 买同结算日 VX 期货。
         对冲量 = sum(量 x delta / 10)(期权$100/期货$1000)。
 
@@ -34,9 +35,21 @@ import ssl
 import urllib.request
 from pathlib import Path
 
-import certifi
 import numpy as np
 import pandas as pd
+
+
+def _make_ssl_context() -> ssl.SSLContext:
+    """优先用 certifi 的 CA 包(修复 macOS python.org 版 Python 缺根证书的问题)。"""
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+_SSL_CTX = _make_ssl_context()
 
 CBOE_DELAYED_QUOTES_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/{root}.json"
 HEDGE_MULTIPLIER_RATIO = 0.1  # VIX期权$100 / VX期货$1000 -> 每张期权对冲需 delta/10 张VX
@@ -49,24 +62,37 @@ PROT_PREMIUM_ARMED_PERCENTILE = 90.0  # 保护区权利金支出分位 >= 90 -> 
 FLOW_PERCENTILE_LOOKBACK = 252
 FLOW_MIN_ROWS = 60  # 冷启动期不报警
 
-# ---------------- SPX 保护区桶定义 ----------------
-PROT_DTE_MIN, PROT_DTE_MAX = 21, 90
-PROT_PUT_OTM_MIN, PROT_PUT_OTM_MAX = -0.20, -0.03
-PROT_CALL_OTM_MIN, PROT_CALL_OTM_MAX = 0.00, 0.20  # 桶内P/C的对照call
+# ---------------- SPX put 分桶定义 ----------------
+# 三个期限桶, 语义不同, 分开计分(避免单一21-90桶把"近端事件对冲"和"中期仓位"混在一起):
+#   tac: 3-22 DTE  战术桶  -> 未来1-3周的事件性对冲(周末风险/数据周/战事), 衰减快;
+#                            自带彩票churn噪声, 解读时优先看OI变化
+#   vix: 23-37 DTE VIX窗   -> 官方VIX计算唯一使用的期限段(近月>23天、次月<37天,
+#                            插值出恒定30天波动率), 只有这一桶直接进入VIX公式
+#   str: 38-90 DTE 结构桶  -> 中期战略保护/波动率期限结构仓位, 与VIX现货联系弱
+SPX_BUCKETS = {"tac": (3, 22), "vix": (23, 37), "str": (38, 90)}
+PROT_PUT_OTM_MIN, PROT_PUT_OTM_MAX = -0.20, -0.03  # 虚值 3%-20% 的 put
 SPX_OPTION_MULTIPLIER = 100
 
-
+DEBUG = False
 # ================================================================ 通用抓取
 
 
 def _fetch_chain(root: str, timeout: int = 120) -> tuple[list[dict], str, dict]:
     url = CBOE_DELAYED_QUOTES_URL.format(root=root)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept-Encoding": "gzip"})
-    ssl_context = ssl.create_default_context(cafile=certifi.where())
-    with urllib.request.urlopen(req, timeout=timeout, context=ssl_context) as resp:
-        body = resp.read()
-        if resp.headers.get("Content-Encoding") == "gzip":
-            body = gzip.decompress(body)
+    try:
+        resp = urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX)
+    except urllib.error.URLError as e:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(e):
+            raise
+        print(
+            "[warn] 本地CA证书缺失, 本次临时跳过证书校验。"
+            "彻底修复: 运行 '/Applications/Python 3.x/Install Certificates.command' 或 'pip install -U certifi'"
+        )
+        resp = urllib.request.urlopen(req, timeout=timeout, context=ssl._create_unverified_context())
+    body = resp.read()
+    if resp.headers.get("Content-Encoding") == "gzip":
+        body = gzip.decompress(body)
     raw = json.loads(body)
     meta = {k: v for k, v in raw["data"].items() if k != "options"}
     return raw["data"]["options"], str(raw.get("timestamp", "")), meta
@@ -95,8 +121,7 @@ def aggregate_vix_calls(chain: pd.DataFrame) -> pd.DataFrame:
     for expiry, g in chain.groupby("expiry"):
         c = g[g["cp"] == "C"]
         p = g[g["cp"] == "P"]
-        call_vol, put_vol = c["volume"].sum(), p["volume"].sum()  # at the same expiry, sum volume of call/put cross different strike.
-        call_oi = int(c["open_interest"].sum())  # at the same expiry, sum each call's open_interest through different strike.
+        call_vol, put_vol = c["volume"].sum(), p["volume"].sum()
         hedge_buy = float((c["volume"] * c["delta"] * HEDGE_MULTIPLIER_RATIO).sum())
         hedge_sell = float((p["volume"] * p["delta"].abs() * HEDGE_MULTIPLIER_RATIO).sum())
         top_call = c.loc[c["volume"].idxmax()] if len(c) else None
@@ -104,9 +129,8 @@ def aggregate_vix_calls(chain: pd.DataFrame) -> pd.DataFrame:
             {
                 "expiry": expiry,
                 "opt_call_vol": int(call_vol),
-                "opt_put_vol": int(put_vol),
                 "opt_cp_ratio": call_vol / put_vol if put_vol > 0 else np.inf,  # >1 单边买call
-                "opt_call_oi": call_oi,
+                "opt_call_oi": int(c["open_interest"].sum()),
                 "hedge_net_vx": round(hedge_buy - hedge_sell),  # >0 dealer净买VX
                 "top_call_strike": float(top_call["strike"]) if top_call is not None else np.nan,
                 "top_call_vol": int(top_call["volume"]) if top_call is not None else 0,
@@ -146,12 +170,16 @@ def vix_daily_snapshot(history_path: str | Path, vx_settlement_dates: list[str |
     trade_date = trade_date or dt.date.today().isoformat()
 
     chain, ts = fetch_vix_options_chain()
-    # print("/vix_opt_chain")
-    # print(chain.head(30).to_string(index=False))
+
+    if DEBUG:
+        print("/vix_opt_chain")
+        print(chain.head(30).to_string(index=False))
 
     vix_calls_by_expiry = aggregate_vix_calls(chain)
-    # print("/vix_opt_groupby_expiry")
-    # print(vix_calls_by_expiry.to_string(index=False))
+
+    if DEBUG:
+        print("/vix_opt_groupby_expiry")
+        print(vix_calls_by_expiry.to_string(index=False))
 
     flow = link_to_vx(vix_calls_by_expiry, vx_settlement_dates)
     row = pivot_vix_for_signal(flow, trade_date)
@@ -208,31 +236,31 @@ def fetch_spx_options_chain(root: str = "_SPX", timeout: int = 120) -> tuple[pd.
 
 
 def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) -> dict:
-    """机构保护区桶: 21<=DTE<=90 且 虚值3%-20% 的 put(对照call: 同DTE, 平值~虚值20%)。"""
+    """
+    SPX put 分桶聚合: 每桶取 虚值3%-20% 的 put, 输出 量/OI/权利金/量最大行权价。
+    桶定义见 SPX_BUCKETS。注意: 只有 vix 桶(23-37 DTE)直接进入 VIX 计算,
+    tac/str 桶测量的是保护需求本身, 不应表述为"VIX 的计算输入"。
+    """
     d = chain.copy()
     d["dte"] = (d["expiry"] - pd.Timestamp(trade_date)).dt.days
     d["moneyness"] = d["strike"] / spot - 1.0
     d["mid"] = np.where((d["bid"] > 0) & (d["ask"] > 0), (d["bid"] + d["ask"]) / 2.0, np.nan)
 
-    zone = d[(d["dte"] >= PROT_DTE_MIN) & (d["dte"] <= PROT_DTE_MAX)]
-    zp = zone[(zone["cp"] == "P") & (zone["moneyness"] >= PROT_PUT_OTM_MIN) & (zone["moneyness"] <= PROT_PUT_OTM_MAX)]
-    zc = zone[(zone["cp"] == "C") & (zone["moneyness"] >= PROT_CALL_OTM_MIN) & (zone["moneyness"] <= PROT_CALL_OTM_MAX)]
+    row: dict = {"Trade Date": trade_date, "spx_close": spot}
+    puts = d[(d["cp"] == "P") & (d["moneyness"] >= PROT_PUT_OTM_MIN) & (d["moneyness"] <= PROT_PUT_OTM_MAX)]
+    for tag, (lo, hi) in SPX_BUCKETS.items():
+        b = puts[(puts["dte"] >= lo) & (puts["dte"] <= hi)]
+        premium = float((b["volume"] * b["mid"].fillna(0.0) * SPX_OPTION_MULTIPLIER).sum())
+        top = b.loc[b["volume"].idxmax()] if len(b) and b["volume"].max() > 0 else None
+        row[f"spx_{tag}_put_vol"] = int(b["volume"].sum())
+        row[f"spx_{tag}_put_oi"] = int(b["open_interest"].sum())
+        row[f"spx_{tag}_premium_usd"] = round(premium)
+        row[f"spx_{tag}_top_strike"] = float(top["strike"]) if top is not None else np.nan
+        row[f"spx_{tag}_top_oi"] = int(top["open_interest"]) if top is not None else 0
 
-    premium = float((zp["volume"] * zp["mid"].fillna(0.0) * SPX_OPTION_MULTIPLIER).sum())
     total_vol = float(d["volume"].sum())
-    top = zp.loc[zp["volume"].idxmax()] if len(zp) and zp["volume"].max() > 0 else None
-    return {
-        "Trade Date": trade_date,
-        "spx_close": spot,
-        "spx_prot_put_vol": int(zp["volume"].sum()),
-        "spx_prot_put_oi": int(zp["open_interest"].sum()),
-        "spx_prot_premium_usd": round(premium),
-        "spx_prot_pc_ratio": round(zp["volume"].sum() / zc["volume"].sum(), 2) if zc["volume"].sum() > 0 else np.inf,
-        "spx_0dte_share": round(float(d.loc[d["dte"] == 0, "volume"].sum()) / total_vol, 3) if total_vol > 0 else np.nan,
-        "spx_prot_top_strike": float(top["strike"]) if top is not None else np.nan,
-        "spx_prot_top_expiry": str(top["expiry"].date()) if top is not None else "",
-        "spx_prot_top_oi": int(top["open_interest"]) if top is not None else 0,
-    }
+    row["spx_0dte_share"] = round(float(d.loc[d["dte"] == 0, "volume"].sum()) / total_vol, 3) if total_vol > 0 else np.nan
+    return row
 
 
 def spx_daily_snapshot(history_path: str | Path, *, trade_date: str | None = None) -> pd.DataFrame:
@@ -241,14 +269,8 @@ def spx_daily_snapshot(history_path: str | Path, *, trade_date: str | None = Non
     trade_date = trade_date or dt.date.today().isoformat()
 
     chain, ts, meta = fetch_spx_options_chain()
-    # print("/spx_opt_chain")
-    # print(chain.head(30).to_string(index=False))
-
     spot = float(meta.get("close") or meta.get("current_price"))
     row = aggregate_spx_protection(chain, spot, trade_date)
-
-    # print("/spx_opt_chain")
-    # print(pd.DataFrame([row]).head(30).to_string(index=False))
 
     hist = pd.read_csv(history_path, dtype={"Trade Date": str}) if history_path.exists() else pd.DataFrame()
     if not hist.empty:
@@ -272,12 +294,16 @@ def _trailing_pct(s: pd.Series, lookback: int, min_rows: int) -> pd.Series:
     return s.rolling(lookback, min_periods=1).apply(_pct, raw=True)
 
 
-# (源列, 分位列名, 报警阈值) —— 全部是 risk-off 方向: call 爆量 / put 爆量 / 权利金爆涨 / 对冲放大
+# (源列, 分位列名, 报警阈值) —— 全部是 risk-off 方向; SPX结构桶(str)只做观察不报警(阈值None)
 _FLOW_FEATURE_SPECS = [
     ("vx1_opt_call_vol", "vx1_opt_call_vol_pct", CALL_VOL_ARMED_PERCENTILE),
     ("vx1_hedge_net_vx", "vx1_hedge_net_pct", HEDGE_NET_ARMED_PERCENTILE),
-    ("spx_prot_put_vol", "spx_prot_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
-    ("spx_prot_premium_usd", "spx_prot_premium_pct", PROT_PREMIUM_ARMED_PERCENTILE),
+    ("spx_tac_put_vol", "spx_tac_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
+    ("spx_tac_premium_usd", "spx_tac_premium_pct", PROT_PREMIUM_ARMED_PERCENTILE),
+    ("spx_vix_put_vol", "spx_vix_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
+    ("spx_vix_premium_usd", "spx_vix_premium_pct", PROT_PREMIUM_ARMED_PERCENTILE),
+    ("spx_str_put_vol", "spx_str_put_vol_pct", None),
+    ("spx_str_premium_usd", "spx_str_premium_pct", None),
 ]
 
 
@@ -297,9 +323,12 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
         if col not in out.columns:
             continue
         out[new] = _trailing_pct(pd.to_numeric(out[col], errors="coerce"), lookback, min_rows).round(1)
-        armed_any = armed_any | (out[new] >= thresh).fillna(False)
-    if "spx_prot_put_oi" in out.columns:
-        out["spx_prot_put_oi_chg"] = pd.to_numeric(out["spx_prot_put_oi"], errors="coerce").diff()
+        if thresh is not None:
+            armed_any = armed_any | (out[new] >= thresh).fillna(False)
+    for tag in SPX_BUCKETS:
+        oi_col = f"spx_{tag}_put_oi"
+        if oi_col in out.columns:
+            out[f"spx_{tag}_put_oi_chg"] = pd.to_numeric(out[oi_col], errors="coerce").diff()
     out["opt_flow_risk_off_level"] = np.where(armed_any, "RED", "GREEN")
     return out
 
@@ -317,11 +346,12 @@ def merge_into_signal(vx_features: pd.DataFrame, *flow_tables: pd.DataFrame) -> 
 
 
 # ---------------------------------------------------------------- 与 vix_data_signal.py 的 score 接法(参考)
-#   opt_flow_risk_off_level == RED            -> +1~2 (四源任一, 已去重)
-#   或分项: spx_prot_put_vol_pct>=90 -> +1 (指数保护) | vx1_opt_call_vol_pct>=90 -> +1 (波动率保护)
-#           spx_prot_premium_pct>=90 -> +1 (保险价格) | vx1_hedge_net_pct>=80 -> +1 (对冲放大)
-#   持续性: spx_prot_put_oi_chg 连续为正 = 建仓型保护(加权); 单日脉冲+OI不动 = 事件型(标注衰减)
+#   opt_flow_risk_off_level == RED            -> +1~2 (多源任一, 已去重)
+#   或分项: vx1_opt_call_vol_pct>=90 -> +1 (波动率保护) | vx1_hedge_net_pct>=80 -> +1 (对冲放大)
+#           spx_tac_*_pct>=90 -> +1 (近端事件对冲, 衰减快) | spx_vix_*_pct>=90 -> +1 (VIX窗保护)
+#   持续性: 各桶 spx_*_put_oi_chg 连续为正 = 建仓型保护(加权); 单日脉冲+OI不动 = 事件型(标注衰减)
 #   方向校验(免费): vx1_opt_cp_ratio >> 1 且 hedge_net_vx > 0 = 单边买call确认
+#   语义注意: 只有 spx_vix_* 桶(23-37DTE)直接进入VIX计算; tac/str 桶是保护需求本身
 
 if __name__ == "__main__":
     # cron 21:30 UTC 每日一次。VX结算日用 vix_data_signal.py 的
