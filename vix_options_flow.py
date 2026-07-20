@@ -124,15 +124,18 @@ def aggregate_vix_calls(chain: pd.DataFrame) -> pd.DataFrame:
         c = g[g["cp"] == "C"]
         p = g[g["cp"] == "P"]
         call_vol, put_vol = c["volume"].sum(), p["volume"].sum()
+        call_oi, put_oi = c["open_interest"].sum(), p["open_interest"].sum()
         hedge_buy = float((c["volume"] * c["delta"] * HEDGE_MULTIPLIER_RATIO).sum())
         hedge_sell = float((p["volume"] * p["delta"].abs() * HEDGE_MULTIPLIER_RATIO).sum())
         top_call = c.loc[c["volume"].idxmax()] if len(c) else None
         rows.append(
             {
                 "expiry": expiry,
-                "opt_call_vol": int(call_vol),
-                "opt_cp_ratio": call_vol / put_vol if put_vol > 0 else np.inf,  # >1 单边买call
-                "opt_call_oi": int(c["open_interest"].sum()),
+                "call_vol": int(call_vol),
+                "cp_vol_ratio": call_vol / put_vol if put_vol > 0 else np.inf,  # >1 单边买call
+                "call_oi": int(call_oi),
+                "put_oi": int(put_oi),
+                "cp_oi_ratio": call_oi / put_oi if put_oi > 0 else np.inf,
                 "hedge_net_vx": round(hedge_buy - hedge_sell),  # >0 dealer净买VX
                 "top_call_strike": float(top_call["strike"]) if top_call is not None else np.nan,
                 "top_call_vol": int(top_call["volume"]) if top_call is not None else 0,
@@ -141,13 +144,20 @@ def aggregate_vix_calls(chain: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("expiry").reset_index(drop=True)
 
 
-def link_to_vx(flow: pd.DataFrame, vx_settlement_dates: list[str | dt.date]) -> pd.DataFrame:
+def link_to_vx(
+    flow: pd.DataFrame,
+    vx_settlement_dates: list[str | dt.date],
+    *,
+    asof_date: str | dt.date | None = None,
+) -> pd.DataFrame:
     fsd = pd.to_datetime([pd.Timestamp(x) for x in vx_settlement_dates]).sort_values()
-    today = pd.Timestamp(dt.date.today())
-    future_fsd = fsd[fsd >= today].tolist()
+    asof = pd.Timestamp(asof_date or dt.date.today())
+    future_fsd = fsd[fsd >= asof].tolist()
     labels = {pd.Timestamp(d): (f"VX{i + 1}" if i < 2 else "VX3+") for i, d in enumerate(future_fsd)}
     out = flow.copy()
-    out["vx_link"] = out["expiry"].map(lambda e: labels.get(pd.Timestamp(e), "VX3+"))
+    out["vx_link"] = out["expiry"].map(
+        lambda e: "EXPIRED" if pd.Timestamp(e) < asof else labels.get(pd.Timestamp(e), "VX3+")
+    )
     return out
 
 
@@ -158,11 +168,13 @@ def pivot_vix_for_signal(flow_linked: pd.DataFrame, trade_date: str) -> dict:
         if sub.empty:
             continue
         s = sub.iloc[0]
-        row[f"{tag.lower()}_opt_call_vol"] = s["opt_call_vol"]
-        row[f"{tag.lower()}_opt_cp_ratio"] = round(s["opt_cp_ratio"], 2)
+        row[f"{tag.lower()}_call_vol"] = s["call_vol"]
+        row[f"{tag.lower()}_cp_vol_ratio"] = round(s["cp_vol_ratio"], 2)
+        row[f"{tag.lower()}_cp_oi_ratio"] = round(s["cp_oi_ratio"], 2)
         row[f"{tag.lower()}_hedge_net_vx"] = s["hedge_net_vx"]
         row[f"{tag.lower()}_top_call_strike"] = s["top_call_strike"]
-    row["opt_total_hedge_net_vx"] = int(flow_linked["hedge_net_vx"].sum())
+    active = flow_linked[flow_linked["vx_link"] != "EXPIRED"]
+    row["total_hedge_net_vx"] = int(active["hedge_net_vx"].sum())
     return row
 
 
@@ -183,7 +195,7 @@ def vix_daily_snapshot(history_path: str | Path, vx_settlement_dates: list[str |
         print("/vix_opt_groupby_expiry")
         print(vix_calls_by_expiry.to_string(index=False))
 
-    flow = link_to_vx(vix_calls_by_expiry, vx_settlement_dates)
+    flow = link_to_vx(vix_calls_by_expiry, vx_settlement_dates, asof_date=trade_date)
     row = pivot_vix_for_signal(flow, trade_date)
 
     hist = pd.read_csv(history_path, dtype={"Trade Date": str}) if history_path.exists() else pd.DataFrame()
@@ -254,11 +266,9 @@ def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) 
         top = b.loc[b["volume"].idxmax()] if len(b) and b["volume"].max() > 0 else None
         row[f"spx_{tag}_put_vol"] = int(b["volume"].sum())
         row[f"spx_{tag}_put_oi"] = int(b["open_interest"].sum())
-        row[f"spx_{tag}_top_strike"] = float(top["strike"]) if top is not None else np.nan
-        row[f"spx_{tag}_top_oi"] = int(top["open_interest"]) if top is not None else 0
+        row[f"spx_{tag}_top_vol_put_strike"] = float(top["strike"]) if top is not None else np.nan
+        row[f"spx_{tag}_top_vol_put_oi"] = int(top["open_interest"]) if top is not None else 0
 
-    total_vol = float(d["volume"].sum())
-    row["spx_0dte_share"] = round(float(d.loc[d["dte"] == 0, "volume"].sum()) / total_vol, 3) if total_vol > 0 else np.nan
     return row
 
 
@@ -295,7 +305,7 @@ def _trailing_pct(s: pd.Series, lookback: int, min_rows: int) -> pd.Series:
 
 # (源列, 分位列名, 报警阈值) —— 全部是 risk-off 方向; SPX结构桶(str)只做观察不报警(阈值None)
 _FLOW_FEATURE_SPECS = [
-    ("vx1_opt_call_vol", "vx1_opt_call_vol_pct", CALL_VOL_ARMED_PERCENTILE),
+    ("vx1_call_vol", "vx1_call_vol_pct", CALL_VOL_ARMED_PERCENTILE),
     ("vx1_hedge_net_vx", "vx1_hedge_net_pct", HEDGE_NET_ARMED_PERCENTILE),
     ("spx_tac_put_vol", "spx_tac_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
     ("spx_vix_put_vol", "spx_vix_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
@@ -306,8 +316,8 @@ _FLOW_FEATURE_SPECS = [
 def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOOKBACK, min_rows: int = FLOW_MIN_ROWS) -> pd.DataFrame:
     """
     risk-off 分位特征与统一红绿灯:
-      四个报警项任一触发 -> opt_flow_risk_off_level = RED:
-        vx1_opt_call_vol_pct  (VIX call 爆量)
+      四个报警项任一触发 -> flow_risk_off_level = RED:
+        vx1_call_vol_pct      (VIX call 爆量)
         vx1_hedge_net_pct     (dealer 被迫买 VX 放大)
         spx_tac_put_vol_pct   (SPX 近端保护 put 爆量)
         spx_vix_put_vol_pct   (SPX VIX窗保护 put 爆量)
@@ -325,28 +335,40 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
         oi_col = f"spx_{tag}_put_oi"
         if oi_col in out.columns:
             out[f"spx_{tag}_put_oi_chg"] = pd.to_numeric(out[oi_col], errors="coerce").diff()
-    out["opt_flow_risk_off_level"] = np.where(armed_any, "RED", "GREEN")
+    out["flow_risk_off_level"] = np.where(armed_any, "RED", "GREEN")
     return out
+
+
+def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 3) -> str:
+    """Compact volume/OI/VX counts as truncated thousands for console output only."""
+
+    def compact_thousands(value: float) -> str:
+        return f"{int(value / 1_000)}k" if abs(value) >= 1_000 else f"{value:.0f}"
+
+    view = flow_features.tail(tail_rows)
+    compact_suffixes = ("_vol", "_oi", "_oi_chg", "_vx")
+    formatters = {col: compact_thousands for col in view.columns if col.endswith(compact_suffixes)}
+    price_cols = [col for col in view.columns if col == "spx_close" or col.endswith("_strike")]
+    formatters.update({col: lambda value: str(int(value)) for col in price_cols})
+    return view.to_string(index=False, formatters=formatters)
 
 
 def merge_into_signal(vx_features: pd.DataFrame, *flow_tables: pd.DataFrame) -> pd.DataFrame:
     out = vx_features
     for ft in flow_tables:
         cols = [
-            c
-            for c in ft.columns
-            if c == "Trade Date" or c.endswith(("_pct", "_vol", "_vx", "_ratio", "_level", "_strike", "_usd", "_oi", "_oi_chg", "_share"))
+            c for c in ft.columns if c == "Trade Date" or c.endswith(("_pct", "_vol", "_vx", "_ratio", "_level", "_strike", "_usd", "_oi", "_oi_chg"))
         ]
         out = out.merge(ft[cols], on="Trade Date", how="left")
     return out
 
 
 # ---------------------------------------------------------------- 与 vix_data_signal.py 的 score 接法(参考)
-#   opt_flow_risk_off_level == RED            -> +1~2 (多源任一, 已去重)
-#   或分项: vx1_opt_call_vol_pct>=90 -> +1 (波动率保护) | vx1_hedge_net_pct>=80 -> +1 (对冲放大)
+#   flow_risk_off_level == RED                -> +1~2 (多源任一, 已去重)
+#   或分项: vx1_call_vol_pct>=90 -> +1 (波动率保护) | vx1_hedge_net_pct>=80 -> +1 (对冲放大)
 #           spx_tac_*_pct>=90 -> +1 (近端事件对冲, 衰减快) | spx_vix_*_pct>=90 -> +1 (VIX窗保护)
 #   持续性: 各桶 spx_*_put_oi_chg 连续为正 = 建仓型保护(加权); 单日脉冲+OI不动 = 事件型(标注衰减)
-#   方向校验(免费): vx1_opt_cp_ratio >> 1 且 hedge_net_vx > 0 = 单边买call确认
+#   方向校验(免费): vx1_cp_vol_ratio >> 1 且 hedge_net_vx > 0 = 单边买call确认
 #   语义注意: 只有 spx_vix_* 桶(23-37DTE)直接进入VIX计算; tac/str 桶是保护需求本身
 
 if __name__ == "__main__":
@@ -360,5 +382,5 @@ if __name__ == "__main__":
     demo_fsd = ["2026-07-22", "2026-08-19", "2026-09-16", "2026-10-21"]
     vix_hist = vix_daily_snapshot(vix_hist_file, demo_fsd)
     spx_hist = spx_daily_snapshot(spx_hist_file)
-    print(add_flow_features(vix_hist).tail(3).to_string(index=False))
-    print(add_flow_features(spx_hist).tail(3).to_string(index=False))
+    print(flow_table_to_string(add_flow_features(vix_hist)))
+    print(flow_table_to_string(add_flow_features(spx_hist)))
