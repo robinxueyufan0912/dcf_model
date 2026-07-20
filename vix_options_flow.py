@@ -58,7 +58,6 @@ HEDGE_MULTIPLIER_RATIO = 0.1  # VIX期权$100 / VX期货$1000 -> 每张期权对
 CALL_VOL_ARMED_PERCENTILE = 90.0  # VX1对应 VIX call 量分位 >= 90 -> 波动率保护爆量
 HEDGE_NET_ARMED_PERCENTILE = 80.0  # 净对冲流分位 >= 80 -> dealer 被迫买 VX 放大器
 PROT_PUT_ARMED_PERCENTILE = 90.0  # SPX 保护区 put 量分位 >= 90 -> 指数保护爆量
-PROT_PREMIUM_ARMED_PERCENTILE = 90.0  # 保护区权利金支出分位 >= 90 -> 保险价格被抢高
 FLOW_PERCENTILE_LOOKBACK = 252
 FLOW_MIN_ROWS = 60  # 冷启动期不报警
 
@@ -69,9 +68,12 @@ FLOW_MIN_ROWS = 60  # 冷启动期不报警
 #   vix: 23-37 DTE VIX窗   -> 官方VIX计算唯一使用的期限段(近月>23天、次月<37天,
 #                            插值出恒定30天波动率), 只有这一桶直接进入VIX公式
 #   str: 38-90 DTE 结构桶  -> 中期战略保护/波动率期限结构仓位, 与VIX现货联系弱
-SPX_BUCKETS = {"tac": (3, 22), "vix": (23, 37), "str": (38, 90)}
+SPX_BUCKETS = {
+    "tac": (3, 22),
+    "vix": (23, 37),
+    # "str": (38, 90)
+}
 PROT_PUT_OTM_MIN, PROT_PUT_OTM_MAX = -0.20, -0.03  # 虚值 3%-20% 的 put
-SPX_OPTION_MULTIPLIER = 100
 
 DEBUG = False
 # ================================================================ 通用抓取
@@ -237,24 +239,21 @@ def fetch_spx_options_chain(root: str = "_SPX", timeout: int = 120) -> tuple[pd.
 
 def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) -> dict:
     """
-    SPX put 分桶聚合: 每桶取 虚值3%-20% 的 put, 输出 量/OI/权利金/量最大行权价。
+    SPX put 分桶聚合: 每桶取虚值 3%-20% 的 put, 输出量/OI/量最大行权价。
     桶定义见 SPX_BUCKETS。注意: 只有 vix 桶(23-37 DTE)直接进入 VIX 计算,
     tac/str 桶测量的是保护需求本身, 不应表述为"VIX 的计算输入"。
     """
     d = chain.copy()
     d["dte"] = (d["expiry"] - pd.Timestamp(trade_date)).dt.days
     d["moneyness"] = d["strike"] / spot - 1.0
-    d["mid"] = np.where((d["bid"] > 0) & (d["ask"] > 0), (d["bid"] + d["ask"]) / 2.0, np.nan)
 
     row: dict = {"Trade Date": trade_date, "spx_close": spot}
     puts = d[(d["cp"] == "P") & (d["moneyness"] >= PROT_PUT_OTM_MIN) & (d["moneyness"] <= PROT_PUT_OTM_MAX)]
     for tag, (lo, hi) in SPX_BUCKETS.items():
         b = puts[(puts["dte"] >= lo) & (puts["dte"] <= hi)]
-        premium = float((b["volume"] * b["mid"].fillna(0.0) * SPX_OPTION_MULTIPLIER).sum())
         top = b.loc[b["volume"].idxmax()] if len(b) and b["volume"].max() > 0 else None
         row[f"spx_{tag}_put_vol"] = int(b["volume"].sum())
         row[f"spx_{tag}_put_oi"] = int(b["open_interest"].sum())
-        row[f"spx_{tag}_premium_usd"] = round(premium)
         row[f"spx_{tag}_top_strike"] = float(top["strike"]) if top is not None else np.nan
         row[f"spx_{tag}_top_oi"] = int(top["open_interest"]) if top is not None else 0
 
@@ -299,23 +298,20 @@ _FLOW_FEATURE_SPECS = [
     ("vx1_opt_call_vol", "vx1_opt_call_vol_pct", CALL_VOL_ARMED_PERCENTILE),
     ("vx1_hedge_net_vx", "vx1_hedge_net_pct", HEDGE_NET_ARMED_PERCENTILE),
     ("spx_tac_put_vol", "spx_tac_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
-    ("spx_tac_premium_usd", "spx_tac_premium_pct", PROT_PREMIUM_ARMED_PERCENTILE),
     ("spx_vix_put_vol", "spx_vix_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
-    ("spx_vix_premium_usd", "spx_vix_premium_pct", PROT_PREMIUM_ARMED_PERCENTILE),
     ("spx_str_put_vol", "spx_str_put_vol_pct", None),
-    ("spx_str_premium_usd", "spx_str_premium_pct", None),
 ]
 
 
 def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOOKBACK, min_rows: int = FLOW_MIN_ROWS) -> pd.DataFrame:
     """
     risk-off 分位特征与统一红绿灯:
-      四个报警源任一触发 -> opt_flow_risk_off_level = RED:
+      四个报警项任一触发 -> opt_flow_risk_off_level = RED:
         vx1_opt_call_vol_pct  (VIX call 爆量)
         vx1_hedge_net_pct     (dealer 被迫买 VX 放大)
-        spx_prot_put_vol_pct  (SPX 保护区 put 爆量)
-        spx_prot_premium_pct  (保护价格被抢高)
-      另附 spx_prot_put_oi_chg(保护区OI日变化, 正=净新增对冲)。
+        spx_tac_put_vol_pct   (SPX 近端保护 put 爆量)
+        spx_vix_put_vol_pct   (SPX VIX窗保护 put 爆量)
+      另附各期限桶 put OI 日变化(正=净新增对冲)。
     """
     out = hist.copy().sort_values("Trade Date").reset_index(drop=True)
     armed_any = pd.Series(False, index=out.index)
@@ -357,8 +353,9 @@ if __name__ == "__main__":
     # cron 21:30 UTC 每日一次。VX结算日用 vix_data_signal.py 的
     # build_vx_monthly_schedule(...) -> [x["fsd"] for x in schedule] 生成。
     here = Path(__file__).resolve().parent
-    vix_hist_file = here / "data" / "vix_call_flow_history.csv"
-    spx_hist_file = here / "data" / "spx_put_flow_history.csv"
+    flow_history_dir = here / "data" / "vix_call_spx_put"
+    vix_hist_file = flow_history_dir / "vix_call_flow_history.csv"
+    spx_hist_file = flow_history_dir / "spx_put_flow_history.csv"
 
     demo_fsd = ["2026-07-22", "2026-08-19", "2026-09-16", "2026-10-21"]
     vix_hist = vix_daily_snapshot(vix_hist_file, demo_fsd)
