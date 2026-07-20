@@ -8,6 +8,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from vix_options_flow import add_flow_features, spx_daily_snapshot, vix_daily_snapshot
+
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
@@ -484,6 +486,24 @@ def print_date_range(df: pd.DataFrame, start: str, end: str, cols: list[str] | N
         print(df.loc[mask])
 
 
+def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Save and print the daily VIX-call and SPX-put flow features."""
+    data_dir = Path(data_dir)
+    option_schedule = build_vx_monthly_schedule(end_date, end_date + dt.timedelta(days=365), holidays)
+    vx_settlement_dates = [item["fsd"] for item in option_schedule if item["fsd"] >= end_date]
+
+    vix_hist = vix_daily_snapshot(data_dir / "vix_call_flow_history.csv", vx_settlement_dates)
+    spx_hist = spx_daily_snapshot(data_dir / "spx_put_flow_history.csv")
+    vix_flow_features = add_flow_features(vix_hist)
+    spx_flow_features = add_flow_features(spx_hist)
+
+    print("/VIX call options flow latest:")
+    print(vix_flow_features.tail(3).to_string(index=False))
+    print("/SPX put protection flow latest:")
+    print(spx_flow_features.tail(3).to_string(index=False))
+    return vix_flow_features, spx_flow_features
+
+
 def run_vx_eod_report(end_date: dt.date) -> None:
     HOLIDAYS_2023 = [
         "2023-01-02",  # New Year's Day (observed)
@@ -722,25 +742,30 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     df_vxcurrent_vxnext_hlocv_features[selected_col].tail(100).to_csv(f"vix_sell_signal/{end_date}_vxcurrent_hlocv_features.csv")
 
     print(
-        "vx1/vx2爆量是risk-off signal的原理: 机构觉得指数要跌, 买入spx put/vix call, dealer卖出vix call, 为保持delta neutral, dealer买入vix call同一到期日的vx1/vx2 contract"
+        '原理:\n'
+        '    L1: 机构对冲指数下行 -> 买 SPX put -> 推高隐波 -> VIX 被"算"高。\n'
+        '        SPX 全链 ~64% 是 0DTE 日内噪音, 必须按"保护区桶"过滤:\n'
+        '        DTE 21-90 天 + 虚值 3%-20% 的 put(教科书式崩盘保护的栖息地)。\n'
+        '    L2: 机构买 VIX call -> dealer 卖 call -> 为 delta neutral 买同结算日 VX 期货。\n'
+        '        对冲量 = sum(量 x delta / 10)(期权$100/期货$1000)。'
     )
-    print("/VIXEQ-VIX spread signal latest:")
-    print(
-        df_vxcurrent_vxnext_hlocv_features[
-            [
-                "Trade Date",
-                "vixeq",
-                "vix",
-                "vixeq_vix_spread",
-                "spread_pct",
-                # "rho",
-                # "rho_armed",
-                "vixeq_risk_off_level",
-            ]
-        ]
-        .dropna(subset=["vixeq_vix_spread"])
-        .tail(10)
-    )
+    # print("/VIXEQ-VIX spread signal latest:")
+    # print(
+    #     df_vxcurrent_vxnext_hlocv_features[
+    #         [
+    #             "Trade Date",
+    #             "vixeq",
+    #             "vix",
+    #             "vixeq_vix_spread",
+    #             "spread_pct",
+    #             # "rho",
+    #             # "rho_armed",
+    #             "vixeq_risk_off_level",
+    #         ]
+    #     ]
+    #     .dropna(subset=["vixeq_vix_spread"])
+    #     .tail(10)
+    # )
 
     ### Print selected date range for df_vxcurrent_vxnext_hlocv_features
     # 2025-11-03 - 11-04, 2025 fed rate not reduce drawdown
@@ -749,15 +774,18 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     # print_date_range(df_vxcurrent_vxnext_hlocv_features, "2026-02-01", "2026-04-01", cols=selected_col, label="vxcurrent_features") # 2026-03-02, 2026 US Iran war drawdown
 
     print(f"Today is {end_date}")
-    print("# risk_off_score (0-7): VX current+next price/volume signals")
-    print("# risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (>=6)")
-    print(f"# vixeq_risk_off_level: RED when spread_pct > {VIXEQ_VIX_SPREAD_ARMED_PERCENTILE:.0f}, else GREEN")
-    print("# vxn_gt_ma20: VXN close is above its 20-trading-day moving average")
-    print("# vxn_ma20_rising: VXN MA20 is higher than on the prior trading day")
-    print("# vxn_risk_off_level: RED when vxn_gt_ma20 and vxn_ma20_rising are both True, else GREEN")
-    print(f"# vxsmh_pct: VXSMH current-inclusive percentile over up to the trailing {VXSMH_PERCENTILE_LOOKBACK} trading days")
-    print(f"# vxsmh_risk_off_level: RED when vxsmh_pct > {VXSMH_RISK_OFF_PERCENTILE:.0f}, else GREEN")
+    # print("# risk_off_score (0-7): VX current+next price/volume signals")
+    # print("# risk_off_level: categorical - GREEN (0-1), YELLOW (2-3), ORANGE (4-5), RED (>=6)")
+    # print(f"# vixeq_risk_off_level: RED when spread_pct > {VIXEQ_VIX_SPREAD_ARMED_PERCENTILE:.0f}, else GREEN")
+    # print("# vxn_gt_ma20: VXN close is above its 20-trading-day moving average")
+    # print("# vxn_ma20_rising: VXN MA20 is higher than on the prior trading day")
+    # print("# vxn_risk_off_level: RED when vxn_gt_ma20 and vxn_ma20_rising are both True, else GREEN")
+    # print(f"# vxsmh_pct: VXSMH current-inclusive percentile over up to the trailing {VXSMH_PERCENTILE_LOOKBACK} trading days")
+    # print(f"# vxsmh_risk_off_level: RED when vxsmh_pct > {VXSMH_RISK_OFF_PERCENTILE:.0f}, else GREEN")
     # print(f"# rho_armed: (VIX/VIXEQ)^2 < {VIXEQ_RHO_ARMED_THRESHOLD:.2f}")
+
+    # ===== VIX call / SPX put options flow snapshots =====
+    run_options_flow_snapshots(end_date, holidays, data_dir)
 
 
 # 示例
