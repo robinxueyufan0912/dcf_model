@@ -38,6 +38,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from market_time import format_cboe_timestamp, los_angeles_today
+
 
 def _make_ssl_context() -> ssl.SSLContext:
     """优先用 certifi 的 CA 包(修复 macOS python.org 版 Python 缺根证书的问题)。"""
@@ -96,7 +98,7 @@ def _fetch_chain(root: str, timeout: int = 120) -> tuple[list[dict], str, dict]:
         body = gzip.decompress(body)
     raw = json.loads(body)
     meta = {k: v for k, v in raw["data"].items() if k != "options"}
-    return raw["data"]["options"], str(raw.get("timestamp", "")), meta
+    return raw["data"]["options"], format_cboe_timestamp(raw.get("timestamp")), meta
 
 
 # ================================================================ L2: VIX call 流
@@ -150,7 +152,7 @@ def link_to_vx(
     asof_date: str | dt.date | None = None,
 ) -> pd.DataFrame:
     fsd = pd.to_datetime([pd.Timestamp(x) for x in vx_settlement_dates]).sort_values()
-    asof = pd.Timestamp(asof_date or dt.date.today())
+    asof = pd.Timestamp(asof_date or los_angeles_today())
     future_fsd = fsd[fsd >= asof].tolist()
     labels = {pd.Timestamp(d): (f"VX{i + 1}" if i < 2 else "VX3+") for i, d in enumerate(future_fsd)}
     out = flow.copy()
@@ -178,7 +180,7 @@ def pivot_vix_for_signal(flow_linked: pd.DataFrame, trade_date: str) -> dict:
 def vix_daily_snapshot(history_path: str | Path, vx_settlement_dates: list[str | dt.date], *, trade_date: str | None = None) -> pd.DataFrame:
     history_path = Path(history_path)
     history_path.parent.mkdir(parents=True, exist_ok=True)
-    trade_date = trade_date or dt.date.today().isoformat()
+    trade_date = trade_date or los_angeles_today().isoformat()
 
     chain, ts = fetch_vix_options_chain()
 
@@ -269,7 +271,7 @@ def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) 
 def spx_daily_snapshot(history_path: str | Path, *, trade_date: str | None = None) -> pd.DataFrame:
     history_path = Path(history_path)
     history_path.parent.mkdir(parents=True, exist_ok=True)
-    trade_date = trade_date or dt.date.today().isoformat()
+    trade_date = trade_date or los_angeles_today().isoformat()
 
     chain, ts, meta = fetch_spx_options_chain()
     spot = float(meta.get("close") or meta.get("current_price"))

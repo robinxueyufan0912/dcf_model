@@ -1,3 +1,4 @@
 Trade Date,spx_close,spx_tac_put_vol,spx_tac_put_vol_pct,spx_tac_put_oi,spx_tac_put_vol_oi_ratio,spx_tac_put_oi_chg,spx_tac_put_oi_chg_pct,spx_vix_put_vol,spx_vix_put_vol_pct,spx_vix_put_oi,spx_vix_put_vol_oi_ratio,spx_vix_put_oi_chg,spx_vix_put_oi_chg_pct,flow_risk_off_level
 2026-07-19,7457.69,141902,,839793,0.169,,,89908,,918966,0.098,,,GREEN
 2026-07-20,7443.2798,80869,,801724,0.101,-38069.0,-4.5,51330,,908587,0.056,-10379.0,-1.1,GREEN
+2026-07-21,7510.6602,52537,,742540,0.071,-59184.0,-7.4,30064,,911086,0.033,2499.0,0.3,GREEN

@@ -1,5 +1,6 @@
 import contextlib
 import datetime as dt
+import json
 import ssl
 import sys
 import urllib.request
@@ -8,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from market_time import NEW_YORK_TZ, los_angeles_today, to_los_angeles_time
 from vix_options_flow import add_flow_features, flow_table_to_string, spx_daily_snapshot, vix_daily_snapshot
 
 pd.set_option("display.max_rows", None)
@@ -23,6 +25,7 @@ CBOE_INDEX_HISTORY_URLS = {
     "VXN": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VXN_History.csv",
     "VXSMH": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VXSMH_History.csv",
 }
+CBOE_INDEX_LATEST_QUOTE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{symbol}.json"
 VIXEQ_VIX_SPREAD_ARMED_PERCENTILE = 85.0
 VIXEQ_VIX_SPREAD_MIN_ROWS = 252
 VXSMH_PERCENTILE_LOOKBACK = 252
@@ -270,6 +273,72 @@ def download_cboe_index_csvs(
     return saved_paths
 
 
+def download_cboe_index_latest_quotes(index_names: list[str], *, verify_ssl: bool = True, cafile: str | None = None) -> dict[str, dict[str, object]]:
+    """Download current Cboe index quotes without making the report depend on them."""
+    if not verify_ssl:
+        context = ssl._create_unverified_context()
+    else:
+        if cafile is None:
+            try:
+                import certifi  # type: ignore
+            except ImportError:
+                certifi = None
+            if certifi is not None:
+                cafile = certifi.where()
+        context = ssl.create_default_context(cafile=cafile)
+
+    quotes: dict[str, dict[str, object]] = {}
+    for index_name in index_names:
+        symbol = index_name.upper()
+        url = CBOE_INDEX_LATEST_QUOTE_URL.format(symbol=symbol)
+        try:
+            with urllib.request.urlopen(url, context=context, timeout=15) as resp:
+                payload = json.load(resp)
+            if isinstance(payload, dict):
+                quotes[symbol] = payload
+        except (OSError, ValueError) as exc:
+            print(f"[index quote] {symbol} unavailable: {exc}", file=sys.stderr)
+    return quotes
+
+
+def append_cboe_latest_index_quote(
+    history: pd.DataFrame, index_name: str, quote: dict[str, object] | None, *, max_date: dt.date | None = None
+) -> pd.DataFrame:
+    """Append a newer quote date only when the official daily history has not published it."""
+    if not quote:
+        return history
+
+    value_col = index_name.lower()
+    if value_col not in history.columns:
+        raise ValueError(f"history is missing {value_col} column")
+
+    data = quote.get("data")
+    if not isinstance(data, dict):
+        return history
+
+    # Prefer the quote's actual market time. Cboe's top-level timestamp is UTC
+    # without an offset and can already be on the next date when Los Angeles is
+    # still on the current trading date.
+    quote_ts = to_los_angeles_time(data.get("last_trade_time"), naive_timezone=NEW_YORK_TZ)
+    if quote_ts is None:
+        quote_ts = to_los_angeles_time(quote.get("timestamp"))
+    quote_value = pd.to_numeric(data.get("close", data.get("current_price")), errors="coerce")
+    if quote_ts is None or pd.isna(quote_value):
+        return history
+
+    quote_date = quote_ts.date()
+    if max_date is not None and quote_date > max_date:
+        return history
+
+    out = history.copy()
+    history_dates = pd.to_datetime(out["Trade Date"], errors="coerce")
+    if history_dates.notna().any() and quote_date <= history_dates.max().date():
+        return out
+
+    latest = pd.DataFrame({"Trade Date": [quote_date.isoformat()], value_col: [float(quote_value)]})
+    return pd.concat([out, latest], ignore_index=True).sort_values("Trade Date").reset_index(drop=True)
+
+
 def load_cboe_index_history_csv(path: str | Path, index_name: str) -> pd.DataFrame:
     """Load a Cboe index history CSV and normalize to Trade Date plus one numeric value column."""
     path = Path(path)
@@ -423,20 +492,25 @@ def add_volume_metrics_rows_incl_today_strict(
 ) -> pd.DataFrame:
     out = df.copy()
     out[date_col] = pd.to_datetime(out[date_col], errors="coerce")
+    out["Close"] = pd.to_numeric(out["Close"], errors="coerce")
     out[volume_col] = pd.to_numeric(out[volume_col], errors="coerce")
     out = out.sort_values(date_col).reset_index(drop=True)
 
-    out["Close_MA20"] = out["Close"].rolling(20, min_periods=20).mean()
-    out["Close_MA50"] = out["Close"].rolling(50, min_periods=50).mean()
+    # Index histories can publish one day before VX futures CSVs. Calculate VX
+    # rolling features only on rows that actually have VX data, then join them
+    # back so an index-only placeholder does not consume a rolling-window row.
+    vx = out.loc[out["Close"].notna() & out[volume_col].notna()].copy()
+    vx["Close_MA20"] = vx["Close"].rolling(20, min_periods=20).mean()
+    vx["Close_MA50"] = vx["Close"].rolling(50, min_periods=50).mean()
 
     # Price signals
-    out["close_gt_ma50"] = out["Close"] > out["Close_MA50"]
-    out["ma20_rising"] = out["Close_MA20"].diff() > 0
-    out["close_gt_ma20"] = out["Close"] > out["Close_MA20"]
+    vx["close_gt_ma50"] = vx["Close"] > vx["Close_MA50"]
+    vx["ma20_rising"] = vx["Close_MA20"].diff() > 0
+    vx["close_gt_ma20"] = vx["Close"] > vx["Close_MA20"]
 
     # Volume signals
-    out["Volume_MA50"] = out[volume_col].rolling(ma_window, min_periods=ma_window).mean()
-    out["Volume/MA50"] = out[volume_col] / out["Volume_MA50"]
+    vx["Volume_MA50"] = vx[volume_col].rolling(ma_window, min_periods=ma_window).mean()
+    vx["Volume/MA50"] = vx[volume_col] / vx["Volume_MA50"]
 
     def pct_rank_in_window(arr: np.ndarray) -> float:
         arr = arr.astype(float)
@@ -446,30 +520,48 @@ def add_volume_metrics_rows_incl_today_strict(
         v = arr[-1]  # 当日值（窗口最后一个）
         return float(np.mean(arr <= v) * 100.0)
 
-    out["volume_pct"] = out[volume_col].rolling(window=lookback_rows, min_periods=lookback_rows).apply(pct_rank_in_window, raw=True)
+    vx["volume_pct"] = vx[volume_col].rolling(window=lookback_rows, min_periods=lookback_rows).apply(pct_rank_in_window, raw=True)
 
-    out["vol_ge_1.85x_ma50"] = out["Volume/MA50"] >= 1.85
-    out["vol_ge_90pct"] = out["volume_pct"] >= 90
+    vx["vol_ge_1.85x_ma50"] = vx["Volume/MA50"] >= 1.85
+    vx["vol_ge_90pct"] = vx["volume_pct"] >= 90
 
-    out["vol_ge_90pct_last_5days"] = out["volume_pct"].rolling(window=5, min_periods=5).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
-    out["vol_ge_90pct_last_10days"] = out["volume_pct"].rolling(window=10, min_periods=10).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
+    vx["vol_ge_90pct_last_5days"] = vx["volume_pct"].rolling(window=5, min_periods=5).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
+    vx["vol_ge_90pct_last_10days"] = vx["volume_pct"].rolling(window=10, min_periods=10).apply(lambda arr: float(np.sum(arr >= 90.0)), raw=True)
 
     # risk_off_score currently uses VX1 price/volume conditions only.
     risk_off_components = [
-        out["close_gt_ma50"],
-        out["close_gt_ma20"],
-        out["ma20_rising"],
-        out["vol_ge_1.85x_ma50"],
-        out["vol_ge_90pct"],
-        out["vol_ge_90pct_last_5days"] >= 2,
-        out["vol_ge_90pct_last_10days"] >= 3,
+        vx["close_gt_ma50"],
+        vx["close_gt_ma20"],
+        vx["ma20_rising"],
+        vx["vol_ge_1.85x_ma50"],
+        vx["vol_ge_90pct"],
+        vx["vol_ge_90pct_last_5days"] >= 2,
+        vx["vol_ge_90pct_last_10days"] >= 3,
     ]
 
-    score = pd.Series(0, index=out.index, dtype="int64")
+    score = pd.Series(0, index=vx.index, dtype="int64")
     for component in risk_off_components:
         score = score + component.fillna(False).astype(bool).astype(int)
-    out["risk_off_score"] = score
-    out["risk_off_level"] = pd.cut(out["risk_off_score"], bins=[-1, 1, 3, 5, np.inf], labels=["GREEN", "YELLOW", "ORANGE", "RED"])
+    vx["risk_off_score"] = score
+    vx["risk_off_level"] = pd.cut(vx["risk_off_score"], bins=[-1, 1, 3, 5, np.inf], labels=["GREEN", "YELLOW", "ORANGE", "RED"])
+
+    feature_cols = [
+        "Close_MA20",
+        "Close_MA50",
+        "close_gt_ma50",
+        "ma20_rising",
+        "close_gt_ma20",
+        "Volume_MA50",
+        "Volume/MA50",
+        "volume_pct",
+        "vol_ge_1.85x_ma50",
+        "vol_ge_90pct",
+        "vol_ge_90pct_last_5days",
+        "vol_ge_90pct_last_10days",
+        "risk_off_score",
+        "risk_off_level",
+    ]
+    out = out.join(vx[feature_cols])
 
     out = out.reset_index(drop=True)
     return out
@@ -564,18 +656,18 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     )
     x = dt.date(2025, 2, 24)
     table = vx_expiry_table(x, n_months_back=12, holidays=holidays)  # holidays 你可以传入Cboe options holiday日期集合
-    for r in table:
-        print(r)
+    # for r in table:
+    #     print(r)
 
     # ===== find the VX1 contract month for each trading day [start_date, end_date] =====
     start_date = dt.date(2021, 1, 1)
 
     vx1_by_date = vx1_map(start_date, end_date, holidays, business_days_only=True)
 
-    print("/trade_date to VX1 contract month:")
-    # 打印看看
-    for k in sorted(vx1_by_date.keys())[-10:]:
-        print(k, "->", vx1_by_date[k])
+    # print("/trade_date to VX1 contract month:")
+    # # 打印看看
+    # for k in sorted(vx1_by_date.keys())[-10:]:
+    #     print(k, "->", vx1_by_date[k])
 
     # ===== download the latest VX futures HLOCV data =====
     cboe_vx_futures_hlocv_data = {
@@ -623,11 +715,16 @@ def run_vx_eod_report(end_date: dt.date) -> None:
 
     download_cboe_vx_csvs(cboe_vx_futures_hlocv_data, data_dir=data_dir)
     index_paths = download_cboe_index_csvs(CBOE_INDEX_HISTORY_URLS, data_dir=index_data_dir)
+    latest_index_quotes = download_cboe_index_latest_quotes(list(CBOE_INDEX_HISTORY_URLS))
     df_vixeq = load_cboe_index_history_csv(index_paths["VIXEQ"], "VIXEQ")
     df_vix = load_cboe_index_history_csv(index_paths["VIX"], "VIX")
     df_vxn = load_cboe_index_history_csv(index_paths["VXN"], "VXN")
+    df_vixeq = append_cboe_latest_index_quote(df_vixeq, "VIXEQ", latest_index_quotes.get("VIXEQ"), max_date=end_date)
+    df_vix = append_cboe_latest_index_quote(df_vix, "VIX", latest_index_quotes.get("VIX"), max_date=end_date)
+    df_vxn = append_cboe_latest_index_quote(df_vxn, "VXN", latest_index_quotes.get("VXN"), max_date=end_date)
     df_vxn_features = add_vxn_ma20_signal(df_vxn)
     df_vxsmh = load_cboe_index_history_csv(index_paths["VXSMH"], "VXSMH")
+    df_vxsmh = append_cboe_latest_index_quote(df_vxsmh, "VXSMH", latest_index_quotes.get("VXSMH"), max_date=end_date)
     df_vxsmh_features = add_vxsmh_percentile_signal(df_vxsmh)
     df_vixeq_vix_spread_features = add_vixeq_vix_spread_signal(df_vixeq, df_vix)
 
@@ -655,22 +752,40 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     df_vx2_hlocv = df_vx2_hlocv[["Trade Date"] + list(vx2_cols_rename.keys())]
     df_vx2_hlocv = df_vx2_hlocv.rename(columns=vx2_cols_rename)
 
-    df_vx1_vx2_hlocv = df_vx1_hlocv.merge(df_vx2_hlocv, on="Trade Date", how="left")
-    df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.merge(df_vixeq_vix_spread_features, on="Trade Date", how="left")
-    df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.merge(df_vxn_features, on="Trade Date", how="left")
-    df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.merge(df_vxsmh_features, on="Trade Date", how="left")
+    # Use the union of VX and index dates. Cboe index histories can publish the
+    # latest session before the VX futures CSVs; that session should still be
+    # shown with index signals while VX1/VX2 remain empty until the next refresh.
+    trade_dates = pd.concat(
+        [
+            df_vx1_hlocv["Trade Date"],
+            df_vx2_hlocv["Trade Date"],
+            df_vixeq_vix_spread_features["Trade Date"],
+            df_vxn_features["Trade Date"],
+            df_vxsmh_features["Trade Date"],
+        ],
+        ignore_index=True,
+    )
+    trade_dates = pd.to_datetime(trade_dates, errors="coerce").dropna().drop_duplicates().sort_values()
+    trade_dates = trade_dates[(trade_dates.dt.date >= start_date) & (trade_dates.dt.date <= end_date)]
+    report_dates = pd.DataFrame({"Trade Date": trade_dates.dt.strftime("%Y-%m-%d")})
 
-    df_vx1_vx2_hlocv["vx1_vx2_OI"] = pd.to_numeric(df_vx1_vx2_hlocv["Open Interest"], errors="coerce").fillna(0) + pd.to_numeric(
+    df_vx1_vx2_hlocv = report_dates.merge(df_vx1_hlocv, on="Trade Date", how="left", validate="one_to_one")
+    df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.merge(df_vx2_hlocv, on="Trade Date", how="left", validate="one_to_one")
+    df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.merge(df_vixeq_vix_spread_features, on="Trade Date", how="left", validate="one_to_one")
+    df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.merge(df_vxn_features, on="Trade Date", how="left", validate="one_to_one")
+    df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.merge(df_vxsmh_features, on="Trade Date", how="left", validate="one_to_one")
+
+    df_vx1_vx2_hlocv["vx1_vx2_OI"] = pd.to_numeric(df_vx1_vx2_hlocv["Open Interest"], errors="coerce") + pd.to_numeric(
         df_vx1_vx2_hlocv["vx2_Open Interest"], errors="coerce"
-    ).fillna(0)
+    )
     df_vx1_vx2_hlocv = df_vx1_vx2_hlocv.sort_values("Trade Date").reset_index(drop=True)
     df_vx1_vx2_hlocv["vx1_vx2_OI_delta"] = df_vx1_vx2_hlocv["vx1_vx2_OI"].diff()
     # NaN on contract roll dates — the delta is meaningless when VX1/VX2 contracts change
     roll_mask = df_vx1_vx2_hlocv["Futures"] != df_vx1_vx2_hlocv["Futures"].shift(1)
     df_vx1_vx2_hlocv.loc[roll_mask, "vx1_vx2_OI_delta"] = np.nan
 
-    print("/df_vx1_vx2_hlocv:")
-    print(df_vx1_vx2_hlocv.tail(print_tail_num_rows))
+    # print("/df_vx1_vx2_hlocv:")
+    # print(df_vx1_vx2_hlocv.tail(print_tail_num_rows))
     # df_vx1_vx2_hlocv.to_csv("df_vx1_vx2_hlocv.csv")
 
     ### Print selected date range for df_vx1_vx2_hlocv
@@ -736,14 +851,15 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     feature_display = df_vx1_vx2[selected_col].tail(print_tail_num_rows).copy().rename(columns=print_col_aliases)
     for source_col in print_bool_cols:
         display_col = print_col_aliases[source_col]
-        feature_display[display_col] = feature_display[display_col].map(lambda value: "?" if pd.isna(value) else ("Y" if bool(value) else "-"))
+        feature_display[display_col] = feature_display[display_col].map(lambda value: "" if pd.isna(value) else ("Y" if bool(value) else "-"))
     for source_col in ["vol_ge_90pct_last_5days", "vol_ge_90pct_last_10days"]:
         display_col = print_col_aliases[source_col]
-        feature_display[display_col] = pd.to_numeric(feature_display[display_col], errors="coerce").round().astype("Int64")
+        count_values = pd.to_numeric(feature_display[display_col], errors="coerce").round()
+        feature_display[display_col] = count_values.map(lambda value: "" if pd.isna(value) else str(int(value)))
     feature_display["VX1_VolPct"] = pd.to_numeric(feature_display["VX1_VolPct"], errors="coerce").round(1)
 
-    print("# Y=True, empty=False, ?=missing")
-    print(feature_display.to_string(index=False))
+    print("# Y=True, -=False, empty=missing")
+    print(feature_display.to_string(index=False, na_rep=""))
     df_vx1_vx2[selected_col].tail(100).to_csv(f"vix_sell_signal/{end_date}_vx1_hlocv_features.csv")
 
     print(
@@ -778,7 +894,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
 
 # 示例
 if __name__ == "__main__":
-    end_date = dt.date.today()
+    end_date = los_angeles_today()
     report_dir = Path(__file__).resolve().parent / "vix_sell_signal"
     report_dir.mkdir(parents=True, exist_ok=True)
     report_path = report_dir / f"{end_date}_vx_eod_report.txt"
