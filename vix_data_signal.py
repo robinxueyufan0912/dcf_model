@@ -489,13 +489,17 @@ def print_date_range(df: pd.DataFrame, start: str, end: str, cols: list[str] | N
 def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Save and print the daily VIX-call and SPX-put flow features."""
     data_dir = Path(data_dir)
+    vix_history_path = data_dir / "vix_call_flow_history.csv"
+    spx_history_path = data_dir / "spx_put_flow_history.csv"
     option_schedule = build_vx_monthly_schedule(end_date, end_date + dt.timedelta(days=365), holidays)
     vx_settlement_dates = [item["fsd"] for item in option_schedule if item["fsd"] >= end_date]
 
-    vix_hist = vix_daily_snapshot(data_dir / "vix_call_flow_history.csv", vx_settlement_dates)
-    spx_hist = spx_daily_snapshot(data_dir / "spx_put_flow_history.csv")
+    vix_hist = vix_daily_snapshot(vix_history_path, vx_settlement_dates)
+    spx_hist = spx_daily_snapshot(spx_history_path)
     vix_flow_features = add_flow_features(vix_hist)
     spx_flow_features = add_flow_features(spx_hist)
+    vix_flow_features.to_csv(vix_history_path, index=False)
+    spx_flow_features.to_csv(spx_history_path, index=False)
 
     print("/VIX call options flow latest:")
     print(flow_table_to_string(vix_flow_features))

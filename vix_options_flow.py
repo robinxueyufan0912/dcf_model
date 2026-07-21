@@ -55,8 +55,7 @@ CBOE_DELAYED_QUOTES_URL = "https://cdn.cboe.com/api/global/delayed_quotes/option
 HEDGE_MULTIPLIER_RATIO = 0.1  # VIX期权$100 / VX期货$1000 -> 每张期权对冲需 delta/10 张VX
 
 # ---------------- 报警阈值 ----------------
-CALL_VOL_ARMED_PERCENTILE = 90.0  # VX1对应 VIX call 量分位 >= 90 -> 波动率保护爆量
-HEDGE_NET_ARMED_PERCENTILE = 80.0  # 净对冲流分位 >= 80 -> dealer 被迫买 VX 放大器
+CALL_VOL_ARMED_PERCENTILE = 90.0  # VX1/VX2 对应 VIX call 量分位 >= 90 -> 波动率保护爆量
 PROT_PUT_ARMED_PERCENTILE = 90.0  # SPX 保护区 put 量分位 >= 90 -> 指数保护爆量
 FLOW_PERCENTILE_LOOKBACK = 252
 FLOW_MIN_ROWS = 60  # 冷启动期不报警
@@ -173,8 +172,6 @@ def pivot_vix_for_signal(flow_linked: pd.DataFrame, trade_date: str) -> dict:
         row[f"{tag.lower()}_cp_oi_ratio"] = round(s["cp_oi_ratio"], 2)
         row[f"{tag.lower()}_hedge_net_vx"] = s["hedge_net_vx"]
         row[f"{tag.lower()}_top_call_strike"] = s["top_call_strike"]
-    active = flow_linked[flow_linked["vx_link"] != "EXPIRED"]
-    row["total_hedge_net_vx"] = int(active["hedge_net_vx"].sum())
     return row
 
 
@@ -251,7 +248,7 @@ def fetch_spx_options_chain(root: str = "_SPX", timeout: int = 120) -> tuple[pd.
 
 def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) -> dict:
     """
-    SPX put 分桶聚合: 每桶取虚值 3%-20% 的 put, 输出量/OI/量最大行权价。
+    SPX put 分桶聚合: 每桶取虚值 3%-20% 的 put，输出总 volume 和总 OI。
     桶定义见 SPX_BUCKETS。注意: 只有 vix 桶(23-37 DTE)直接进入 VIX 计算,
     tac/str 桶测量的是保护需求本身, 不应表述为"VIX 的计算输入"。
     """
@@ -263,11 +260,8 @@ def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) 
     puts = d[(d["cp"] == "P") & (d["moneyness"] >= PROT_PUT_OTM_MIN) & (d["moneyness"] <= PROT_PUT_OTM_MAX)]
     for tag, (lo, hi) in SPX_BUCKETS.items():
         b = puts[(puts["dte"] >= lo) & (puts["dte"] <= hi)]
-        top = b.loc[b["volume"].idxmax()] if len(b) and b["volume"].max() > 0 else None
         row[f"spx_{tag}_put_vol"] = int(b["volume"].sum())
         row[f"spx_{tag}_put_oi"] = int(b["open_interest"].sum())
-        row[f"spx_{tag}_top_vol_put_strike"] = float(top["strike"]) if top is not None else np.nan
-        row[f"spx_{tag}_top_vol_put_oi"] = int(top["open_interest"]) if top is not None else 0
 
     return row
 
@@ -306,11 +300,55 @@ def _trailing_pct(s: pd.Series, lookback: int, min_rows: int) -> pd.Series:
 # (源列, 分位列名, 报警阈值) —— 全部是 risk-off 方向; SPX结构桶(str)只做观察不报警(阈值None)
 _FLOW_FEATURE_SPECS = [
     ("vx1_call_vol", "vx1_call_vol_pct", CALL_VOL_ARMED_PERCENTILE),
-    ("vx1_hedge_net_vx", "vx1_hedge_net_pct", HEDGE_NET_ARMED_PERCENTILE),
+    ("vx2_call_vol", "vx2_call_vol_pct", CALL_VOL_ARMED_PERCENTILE),
     ("spx_tac_put_vol", "spx_tac_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
     ("spx_vix_put_vol", "spx_vix_put_vol_pct", PROT_PUT_ARMED_PERCENTILE),
     ("spx_str_put_vol", "spx_str_put_vol_pct", None),
 ]
+
+
+def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
+    """Return flow features in a stable, analysis-friendly column order."""
+    if "spx_close" in flow_features.columns:
+        preferred = ["Trade Date", "spx_close"]
+        for tag in SPX_BUCKETS:
+            preferred.extend(
+                [
+                    f"spx_{tag}_put_vol",
+                    f"spx_{tag}_put_vol_pct",
+                    f"spx_{tag}_put_oi",
+                    f"spx_{tag}_put_vol_oi_ratio",
+                    f"spx_{tag}_put_oi_chg",
+                    f"spx_{tag}_put_oi_chg_pct",
+                ]
+            )
+    elif "vx1_call_vol" in flow_features.columns:
+        preferred = [
+            "Trade Date",
+            "vx1_call_vol",
+            "vx1_call_vol_pct",
+            "vx1_cp_vol_ratio",
+            "vx1_cp_oi_ratio",
+            "vx1_hedge_net_vx",
+            "vx1_top_call_strike",
+            "vx2_call_vol",
+            "vx2_call_vol_pct",
+            "vx2_cp_vol_ratio",
+            "vx2_cp_oi_ratio",
+            "vx2_hedge_net_vx",
+            "vx2_top_call_strike",
+            "vx2_vx1_call_vol_ratio",
+        ]
+    else:
+        preferred = ["Trade Date"]
+
+    risk_col = "flow_risk_off_level"
+    preferred = [col for col in preferred if col in flow_features.columns]
+    remaining = [col for col in flow_features.columns if col not in preferred and col != risk_col]
+    ordered = preferred + remaining
+    if risk_col in flow_features.columns:
+        ordered.append(risk_col)
+    return flow_features[ordered]
 
 
 def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOOKBACK, min_rows: int = FLOW_MIN_ROWS) -> pd.DataFrame:
@@ -318,7 +356,7 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
     risk-off 分位特征与统一红绿灯:
       四个报警项任一触发 -> flow_risk_off_level = RED:
         vx1_call_vol_pct      (VIX call 爆量)
-        vx1_hedge_net_pct     (dealer 被迫买 VX 放大)
+        vx2_call_vol_pct      (次月 VIX call 爆量)
         spx_tac_put_vol_pct   (SPX 近端保护 put 爆量)
         spx_vix_put_vol_pct   (SPX VIX窗保护 put 爆量)
       另附各期限桶 put OI 日变化(正=净新增对冲)。
@@ -331,12 +369,25 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
         out[new] = _trailing_pct(pd.to_numeric(out[col], errors="coerce"), lookback, min_rows).round(1)
         if thresh is not None:
             armed_any = armed_any | (out[new] >= thresh).fillna(False)
+
+    if {"vx1_call_vol", "vx2_call_vol"}.issubset(out.columns):
+        vx1_call_vol = pd.to_numeric(out["vx1_call_vol"], errors="coerce")
+        vx2_call_vol = pd.to_numeric(out["vx2_call_vol"], errors="coerce")
+        out["vx2_vx1_call_vol_ratio"] = vx2_call_vol.div(vx1_call_vol.where(vx1_call_vol != 0)).round(2)
+
     for tag in SPX_BUCKETS:
         oi_col = f"spx_{tag}_put_oi"
         if oi_col in out.columns:
-            out[f"spx_{tag}_put_oi_chg"] = pd.to_numeric(out[oi_col], errors="coerce").diff()
+            oi = pd.to_numeric(out[oi_col], errors="coerce")
+            out[f"spx_{tag}_put_oi_chg"] = oi.diff()
+            out[f"spx_{tag}_put_oi_chg_pct"] = oi.div(oi.shift().where(oi.shift() != 0)).sub(1).mul(100).round(1)
+
+            vol_col = f"spx_{tag}_put_vol"
+            if vol_col in out.columns:
+                vol = pd.to_numeric(out[vol_col], errors="coerce")
+                out[f"spx_{tag}_put_vol_oi_ratio"] = vol.div(oi.where(oi != 0)).round(3)
     out["flow_risk_off_level"] = np.where(armed_any, "RED", "GREEN")
-    return out
+    return order_flow_columns(out)
 
 
 def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 3) -> str:
@@ -345,9 +396,11 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 3) -> 
     def compact_thousands(value: float) -> str:
         return f"{int(value / 1_000)}k" if abs(value) >= 1_000 else f"{value:.0f}"
 
-    view = flow_features.tail(tail_rows)
+    view = order_flow_columns(flow_features).tail(tail_rows)
+
     compact_suffixes = ("_vol", "_oi", "_oi_chg", "_vx")
     formatters = {col: compact_thousands for col in view.columns if col.endswith(compact_suffixes)}
+    formatters.update({col: lambda value: f"{value:.1f}%" for col in view.columns if col.endswith("_oi_chg_pct")})
     price_cols = [col for col in view.columns if col == "spx_close" or col.endswith("_strike")]
     formatters.update({col: lambda value: str(int(value)) for col in price_cols})
     return view.to_string(index=False, formatters=formatters)
@@ -365,7 +418,7 @@ def merge_into_signal(vx_features: pd.DataFrame, *flow_tables: pd.DataFrame) -> 
 
 # ---------------------------------------------------------------- 与 vix_data_signal.py 的 score 接法(参考)
 #   flow_risk_off_level == RED                -> +1~2 (多源任一, 已去重)
-#   或分项: vx1_call_vol_pct>=90 -> +1 (波动率保护) | vx1_hedge_net_pct>=80 -> +1 (对冲放大)
+#   或分项: vx1/vx2_call_vol_pct>=90 -> +1 (波动率保护)
 #           spx_tac_*_pct>=90 -> +1 (近端事件对冲, 衰减快) | spx_vix_*_pct>=90 -> +1 (VIX窗保护)
 #   持续性: 各桶 spx_*_put_oi_chg 连续为正 = 建仓型保护(加权); 单日脉冲+OI不动 = 事件型(标注衰减)
 #   方向校验(免费): vx1_cp_vol_ratio >> 1 且 hedge_net_vx > 0 = 单边买call确认
@@ -382,5 +435,9 @@ if __name__ == "__main__":
     demo_fsd = ["2026-07-22", "2026-08-19", "2026-09-16", "2026-10-21"]
     vix_hist = vix_daily_snapshot(vix_hist_file, demo_fsd)
     spx_hist = spx_daily_snapshot(spx_hist_file)
-    print(flow_table_to_string(add_flow_features(vix_hist)))
-    print(flow_table_to_string(add_flow_features(spx_hist)))
+    vix_flow_features = add_flow_features(vix_hist)
+    spx_flow_features = add_flow_features(spx_hist)
+    vix_flow_features.to_csv(vix_hist_file, index=False)
+    spx_flow_features.to_csv(spx_hist_file, index=False)
+    print(flow_table_to_string(vix_flow_features))
+    print(flow_table_to_string(spx_flow_features))
