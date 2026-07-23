@@ -145,20 +145,13 @@ def aggregate_vix_calls(chain: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("expiry").reset_index(drop=True)
 
 
-def link_to_vx(
-    flow: pd.DataFrame,
-    vx_settlement_dates: list[str | dt.date],
-    *,
-    asof_date: str | dt.date | None = None,
-) -> pd.DataFrame:
+def link_to_vx(flow: pd.DataFrame, vx_settlement_dates: list[str | dt.date], *, asof_date: str | dt.date | None = None) -> pd.DataFrame:
     fsd = pd.to_datetime([pd.Timestamp(x) for x in vx_settlement_dates]).sort_values()
     asof = pd.Timestamp(asof_date or los_angeles_today())
     future_fsd = fsd[fsd >= asof].tolist()
     labels = {pd.Timestamp(d): (f"VX{i + 1}" if i < 2 else "VX3+") for i, d in enumerate(future_fsd)}
     out = flow.copy()
-    out["vx_link"] = out["expiry"].map(
-        lambda e: "EXPIRED" if pd.Timestamp(e) < asof else labels.get(pd.Timestamp(e), "VX3+")
-    )
+    out["vx_link"] = out["expiry"].map(lambda e: "EXPIRED" if pd.Timestamp(e) < asof else labels.get(pd.Timestamp(e), "VX3+"))
     return out
 
 
@@ -170,6 +163,7 @@ def pivot_vix_for_signal(flow_linked: pd.DataFrame, trade_date: str) -> dict:
             continue
         s = sub.iloc[0]
         row[f"{tag.lower()}_call_vol"] = s["call_vol"]
+        row[f"{tag.lower()}_expiry"] = pd.Timestamp(s["expiry"]).date().isoformat()
         row[f"{tag.lower()}_cp_vol_ratio"] = round(s["cp_vol_ratio"], 2)
         row[f"{tag.lower()}_cp_oi_ratio"] = round(s["cp_oi_ratio"], 2)
         row[f"{tag.lower()}_hedge_net_vx"] = s["hedge_net_vx"]
@@ -319,24 +313,30 @@ def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
                     f"spx_{tag}_put_vol",
                     f"spx_{tag}_put_vol_pct",
                     f"spx_{tag}_put_oi",
-                    f"spx_{tag}_put_vol_oi_ratio",
                     f"spx_{tag}_put_oi_chg",
                     f"spx_{tag}_put_oi_chg_pct",
+                    f"spx_{tag}_put_vol_oi_ratio",
                 ]
             )
     elif "vx1_call_vol" in flow_features.columns:
         preferred = [
             "Trade Date",
             "vx1_call_vol",
+            "vx1_expiry",
             "vx1_call_vol_pct",
             "vx1_cp_vol_ratio",
+            "vx1_cp_vol_ratio_chg_pct",
             "vx1_cp_oi_ratio",
+            "vx1_cp_oi_ratio_chg_pct",
             "vx1_hedge_net_vx",
             "vx1_top_call_strike",
             "vx2_call_vol",
+            "vx2_expiry",
             "vx2_call_vol_pct",
             "vx2_cp_vol_ratio",
+            "vx2_cp_vol_ratio_chg_pct",
             "vx2_cp_oi_ratio",
+            "vx2_cp_oi_ratio_chg_pct",
             "vx2_hedge_net_vx",
             "vx2_top_call_strike",
             "vx2_vx1_call_vol_ratio",
@@ -377,6 +377,12 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
         vx2_call_vol = pd.to_numeric(out["vx2_call_vol"], errors="coerce")
         out["vx2_vx1_call_vol_ratio"] = vx2_call_vol.div(vx1_call_vol.where(vx1_call_vol != 0)).round(2)
 
+    # C/P 比率的日变化百分比(相比前一交易日; inf 视为缺失, 避免除零/无穷传播)
+    for col in ["vx1_cp_vol_ratio", "vx1_cp_oi_ratio", "vx2_cp_vol_ratio", "vx2_cp_oi_ratio"]:
+        if col in out.columns:
+            ratio = pd.to_numeric(out[col], errors="coerce").replace([np.inf, -np.inf], np.nan)
+            out[f"{col}_chg_pct"] = ratio.div(ratio.shift().where(ratio.shift() != 0)).sub(1).mul(100).round(1)
+
     for tag in SPX_BUCKETS:
         oi_col = f"spx_{tag}_put_oi"
         if oi_col in out.columns:
@@ -392,19 +398,27 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
     return order_flow_columns(out)
 
 
-def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 3) -> str:
+def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) -> str:
     """Compact volume/OI/VX counts as truncated thousands for console output only."""
+    # 打印时隐藏的低信息列(CSV 中仍保留)
+    hidden_cols = {"vx1_hedge_net_vx", "vx2_hedge_net_vx", "vx1_top_call_strike", "vx2_top_call_strike", "vx2_vx1_call_vol_ratio"}
 
     def compact_thousands(value: float) -> str:
         return f"{int(value / 1_000)}k" if abs(value) >= 1_000 else f"{value:.0f}"
 
     view = order_flow_columns(flow_features).tail(tail_rows)
+    view = view.drop(columns=[c for c in view.columns if c in hidden_cols])
 
     compact_suffixes = ("_vol", "_oi", "_oi_chg", "_vx")
     formatters = {col: compact_thousands for col in view.columns if col.endswith(compact_suffixes)}
-    formatters.update({col: lambda value: f"{value:.1f}%" for col in view.columns if col.endswith("_oi_chg_pct")})
+    formatters.update({col: lambda value: f"{value:.1f}%" for col in view.columns if col.endswith("_chg_pct")})
     price_cols = [col for col in view.columns if col == "spx_close" or col.endswith("_strike")]
     formatters.update({col: lambda value: str(int(value)) for col in price_cols})
+    # expiry 只显示月-日(CSV 中仍是完整日期)
+    formatters.update({col: lambda value: str(value)[5:] for col in view.columns if col.endswith("_expiry")})
+    # 分位列冷启动期全为 NaN, 整列不显示
+    all_nan_pct_cols = [col for col in view.columns if col.endswith("_vol_pct") and view[col].isna().all()]
+    view = view.drop(columns=all_nan_pct_cols)
     return view.to_string(index=False, formatters=formatters)
 
 

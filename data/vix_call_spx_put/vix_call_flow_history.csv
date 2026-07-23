@@ -1,4 +1,6 @@
-Trade Date,vx1_call_vol,vx1_call_vol_pct,vx1_cp_vol_ratio,vx1_cp_oi_ratio,vx1_hedge_net_vx,vx1_top_call_strike,vx2_call_vol,vx2_call_vol_pct,vx2_cp_vol_ratio,vx2_cp_oi_ratio,vx2_hedge_net_vx,vx2_top_call_strike,vx2_vx1_call_vol_ratio,flow_risk_off_level
-2026-07-19,309693,,1.47,,3095,25.0,282969,,4.6,,6409,26.0,0.91,GREEN
-2026-07-20,142170,,0.88,2.32,1755,25.0,130402,,2.07,3.82,1861,25.0,0.92,GREEN
-2026-07-21,156593,,0.63,2.33,-7696,18.0,431779,,2.83,3.74,3749,35.0,2.76,GREEN
+Trade Date,vx1_call_vol,vx1_expiry,vx1_call_vol_pct,vx1_cp_vol_ratio,vx1_cp_vol_ratio_chg_pct,vx1_cp_oi_ratio,vx1_cp_oi_ratio_chg_pct,vx1_hedge_net_vx,vx1_top_call_strike,vx2_call_vol,vx2_expiry,vx2_call_vol_pct,vx2_cp_vol_ratio,vx2_cp_vol_ratio_chg_pct,vx2_cp_oi_ratio,vx2_cp_oi_ratio_chg_pct,vx2_hedge_net_vx,vx2_top_call_strike,vx2_vx1_call_vol_ratio,flow_risk_off_level
+2026-07-19,309693,,,1.47,,,,3095,25.0,282969,,,4.6,,,,6409,26.0,0.91,GREEN
+2026-07-20,142170,,,0.88,-40.1,2.32,,1755,25.0,130402,,,2.07,-55.0,3.82,,1861,25.0,0.92,GREEN
+2026-07-21,156593,,,0.63,-28.4,2.33,0.4,-7721,18.0,431779,,,2.83,36.7,3.74,-2.1,3618,35.0,2.76,GREEN
+2026-07-22,0,,,inf,,2.46,5.6,0,10.0,170600,,,4.05,43.1,3.57,-4.5,2429,35.0,,GREEN
+2026-07-23,498880,2026-08-19,,4.15,,3.55,44.3,5264,65.0,354757,2026-09-16,,11.4,181.5,2.5,-30.0,3986,65.0,0.71,GREEN

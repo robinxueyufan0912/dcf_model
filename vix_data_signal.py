@@ -1,8 +1,10 @@
 import contextlib
 import datetime as dt
 import json
+import re
 import ssl
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
@@ -31,6 +33,42 @@ VIXEQ_VIX_SPREAD_MIN_ROWS = 252
 VXSMH_PERCENTILE_LOOKBACK = 252
 VXSMH_RISK_OFF_PERCENTILE = 85.0
 # VIXEQ_RHO_ARMED_THRESHOLD = 0.15
+
+# cdn.cboe.com 在 Cloudflare 后面：不带 UA 或短时间大量请求会被临时封 IP(403)。
+# 所以下载统一带浏览器 UA、加请求间隔，且已过期合约的不可变 CSV 不重复下载。
+_MONTH_CODE_REVERSE = {code: month for month, code in MONTH_CODE.items()}
+_REQUEST_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+    "Accept": "*/*",
+}
+DOWNLOAD_REQUEST_DELAY = 1.0  # seconds between cboe requests
+
+
+def _make_ssl_context(verify_ssl: bool = True, cafile: str | None = None) -> ssl.SSLContext:
+    if not verify_ssl:
+        return ssl._create_unverified_context()
+    if cafile is None:
+        try:
+            import certifi  # type: ignore
+        except ImportError:
+            certifi = None
+        if certifi is not None:
+            cafile = certifi.where()
+    return ssl.create_default_context(cafile=cafile)
+
+
+def _url_download(url: str, context: ssl.SSLContext, *, timeout: int = 60) -> bytes:
+    req = urllib.request.Request(url, headers=_REQUEST_HEADERS)
+    with urllib.request.urlopen(req, context=context, timeout=timeout) as resp:
+        return resp.read()
+
+
+def vx_contract_month_from_name(name: str) -> tuple[int, int] | None:
+    """Parse 'CFE_VX_N6_2026' -> (2026, 7). None if the name does not match."""
+    m = re.fullmatch(r"CFE_VX_([FGHJKMNQUVXZ])\d_(\d{4})", name)
+    if not m:
+        return None
+    return int(m.group(2)), _MONTH_CODE_REVERSE[m.group(1)]
 
 
 def third_friday(year: int, month: int) -> dt.date:
@@ -216,88 +254,88 @@ def load_vx_csvs(data_dir: str | Path) -> pd.DataFrame:
 def download_cboe_vx_csvs(
     cboe_vx_futures_hlocv_data: dict[str, str], data_dir: str | Path | None = None, *, verify_ssl: bool = True, cafile: str | None = None
 ) -> list[Path]:
-    """Download CSVs to data_dir using dict keys as filenames."""
+    """Download CSVs to data_dir using dict keys as filenames.
+
+    Skips contracts that already settled (their CSV is immutable) and files
+    already refreshed today. On download failure, keeps the existing local
+    file so the report can still run on cached data.
+    """
     if data_dir is None:
         data_dir = Path(__file__).resolve().parent / "data"
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
+    context = _make_ssl_context(verify_ssl, cafile)
 
-    if not verify_ssl:
-        context = ssl._create_unverified_context()
-    else:
-        if cafile is None:
-            try:
-                import certifi  # type: ignore
-            except ImportError:
-                certifi = None
-            if certifi is not None:
-                cafile = certifi.where()
-        context = ssl.create_default_context(cafile=cafile)
-
+    today = los_angeles_today()
     saved_paths = []
     for name, url in cboe_vx_futures_hlocv_data.items():
         out_path = data_dir / f"{name}.csv"
-        with urllib.request.urlopen(url, context=context) as resp:
-            out_path.write_bytes(resp.read())
+        contract_ym = vx_contract_month_from_name(name)
+        settled = contract_ym is not None and contract_ym < (today.year, today.month)
+        fresh_today = out_path.exists() and dt.date.fromtimestamp(out_path.stat().st_mtime) >= today
+        if out_path.exists() and (settled or fresh_today):
+            continue
+        try:
+            payload = _url_download(url, context)
+        except Exception as exc:
+            if out_path.exists():
+                print(f"[vx csv] {name} download failed ({exc}); keeping existing file", file=sys.stderr)
+                continue
+            raise
+        out_path.write_bytes(payload)
         saved_paths.append(out_path)
+        time.sleep(DOWNLOAD_REQUEST_DELAY)
     return saved_paths
 
 
 def download_cboe_index_csvs(
     index_history_urls: dict[str, str], data_dir: str | Path | None = None, *, verify_ssl: bool = True, cafile: str | None = None
 ) -> dict[str, Path]:
-    """Download Cboe index history CSVs to data_dir using index tickers as filenames."""
+    """Download Cboe index history CSVs to data_dir using index tickers as filenames.
+
+    Index histories are mutable (updated daily), so they are always refreshed;
+    on download failure the existing local file is kept.
+    """
     if data_dir is None:
         data_dir = Path(__file__).resolve().parent / "data" / "indices"
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
-
-    if not verify_ssl:
-        context = ssl._create_unverified_context()
-    else:
-        if cafile is None:
-            try:
-                import certifi  # type: ignore
-            except ImportError:
-                certifi = None
-            if certifi is not None:
-                cafile = certifi.where()
-        context = ssl.create_default_context(cafile=cafile)
+    context = _make_ssl_context(verify_ssl, cafile)
 
     saved_paths = {}
     for name, url in index_history_urls.items():
         out_path = data_dir / f"{name}_History.csv"
-        with urllib.request.urlopen(url, context=context) as resp:
-            out_path.write_bytes(resp.read())
+        try:
+            payload = _url_download(url, context)
+        except Exception as exc:
+            if out_path.exists():
+                print(f"[index csv] {name} download failed ({exc}); keeping existing file", file=sys.stderr)
+                saved_paths[name] = out_path
+                continue
+            raise
+        out_path.write_bytes(payload)
         saved_paths[name] = out_path
+        time.sleep(DOWNLOAD_REQUEST_DELAY)
     return saved_paths
 
 
 def download_cboe_index_latest_quotes(index_names: list[str], *, verify_ssl: bool = True, cafile: str | None = None) -> dict[str, dict[str, object]]:
     """Download current Cboe index quotes without making the report depend on them."""
-    if not verify_ssl:
-        context = ssl._create_unverified_context()
-    else:
-        if cafile is None:
-            try:
-                import certifi  # type: ignore
-            except ImportError:
-                certifi = None
-            if certifi is not None:
-                cafile = certifi.where()
-        context = ssl.create_default_context(cafile=cafile)
+    context = _make_ssl_context(verify_ssl, cafile)
 
     quotes: dict[str, dict[str, object]] = {}
     for index_name in index_names:
         symbol = index_name.upper()
         url = CBOE_INDEX_LATEST_QUOTE_URL.format(symbol=symbol)
         try:
-            with urllib.request.urlopen(url, context=context, timeout=15) as resp:
+            req = urllib.request.Request(url, headers=_REQUEST_HEADERS)
+            with urllib.request.urlopen(req, context=context, timeout=15) as resp:
                 payload = json.load(resp)
             if isinstance(payload, dict):
                 quotes[symbol] = payload
         except (OSError, ValueError) as exc:
             print(f"[index quote] {symbol} unavailable: {exc}", file=sys.stderr)
+        time.sleep(DOWNLOAD_REQUEST_DELAY)
     return quotes
 
 
@@ -654,10 +692,6 @@ def run_vx_eod_report(end_date: dt.date) -> None:
             "2026-12-25",
         ]
     )
-    x = dt.date(2025, 2, 24)
-    table = vx_expiry_table(x, n_months_back=12, holidays=holidays)  # holidays 你可以传入Cboe options holiday日期集合
-    # for r in table:
-    #     print(r)
 
     # ===== find the VX1 contract month for each trading day [start_date, end_date] =====
     start_date = dt.date(2021, 1, 1)
@@ -889,7 +923,11 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     # print(f"# rho_armed: (VIX/VIXEQ)^2 < {VIXEQ_RHO_ARMED_THRESHOLD:.2f}")
 
     # ===== VIX call / SPX put options flow snapshots =====
-    run_options_flow_snapshots(end_date, holidays, data_dir / "vix_call_spx_put")
+    # A blocked/failed options download must not kill the main report.
+    try:
+        run_options_flow_snapshots(end_date, holidays, data_dir / "vix_call_spx_put")
+    except Exception as exc:
+        print(f"[options flow] snapshot failed: {exc}", file=sys.stderr)
 
 
 # 示例
