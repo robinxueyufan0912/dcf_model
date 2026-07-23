@@ -321,8 +321,9 @@ def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
     elif "vx1_call_vol" in flow_features.columns:
         preferred = [
             "Trade Date",
-            "vx1_call_vol",
             "vx1_expiry",
+            "vx1_call_vol",
+            "vx1_call_vol_chg_pct",
             "vx1_call_vol_pct",
             "vx1_cp_vol_ratio",
             "vx1_cp_vol_ratio_chg_pct",
@@ -330,8 +331,9 @@ def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
             "vx1_cp_oi_ratio_chg_pct",
             "vx1_hedge_net_vx",
             "vx1_top_call_strike",
-            "vx2_call_vol",
             "vx2_expiry",
+            "vx2_call_vol",
+            "vx2_call_vol_chg_pct",
             "vx2_call_vol_pct",
             "vx2_cp_vol_ratio",
             "vx2_cp_vol_ratio_chg_pct",
@@ -383,6 +385,12 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
             ratio = pd.to_numeric(out[col], errors="coerce").replace([np.inf, -np.inf], np.nan)
             out[f"{col}_chg_pct"] = ratio.div(ratio.shift().where(ratio.shift() != 0)).sub(1).mul(100).round(1)
 
+    # call 量的日变化百分比(相比前一交易日)
+    for col in ["vx1_call_vol", "vx2_call_vol"]:
+        if col in out.columns:
+            vol = pd.to_numeric(out[col], errors="coerce")
+            out[f"{col}_chg_pct"] = vol.div(vol.shift().where(vol.shift() != 0)).sub(1).mul(100).round(1)
+
     for tag in SPX_BUCKETS:
         oi_col = f"spx_{tag}_put_oi"
         if oi_col in out.columns:
@@ -408,17 +416,26 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) ->
 
     view = order_flow_columns(flow_features).tail(tail_rows)
     view = view.drop(columns=[c for c in view.columns if c in hidden_cols])
+    # 分位列冷启动期全为 NaN, 整列不显示
+    all_nan_pct_cols = [col for col in view.columns if col.endswith("_vol_pct") and view[col].isna().all()]
+    view = view.drop(columns=all_nan_pct_cols)
+    # 打印时列名缩短: vx1_ -> 1_, vx2_ -> 2_, 但每组开头的 vx*_expiry 保持原名(CSV 列名不变)
+    keep_full = {"vx1_expiry", "vx2_expiry"}
+
+    def short_name(c: str) -> str:
+        if c in keep_full:
+            return c
+        return c.replace("vx1_", "1_").replace("vx2_", "2_").replace("_chg_pct", "_chg%")
+
+    view = view.rename(columns=short_name)
 
     compact_suffixes = ("_vol", "_oi", "_oi_chg", "_vx")
     formatters = {col: compact_thousands for col in view.columns if col.endswith(compact_suffixes)}
-    formatters.update({col: lambda value: f"{value:.1f}%" for col in view.columns if col.endswith("_chg_pct")})
+    formatters.update({col: lambda value: f"{value:.1f}%" for col in view.columns if col.endswith("_chg%")})
     price_cols = [col for col in view.columns if col == "spx_close" or col.endswith("_strike")]
     formatters.update({col: lambda value: str(int(value)) for col in price_cols})
     # expiry 只显示月-日(CSV 中仍是完整日期)
     formatters.update({col: lambda value: str(value)[5:] for col in view.columns if col.endswith("_expiry")})
-    # 分位列冷启动期全为 NaN, 整列不显示
-    all_nan_pct_cols = [col for col in view.columns if col.endswith("_vol_pct") and view[col].isna().all()]
-    view = view.drop(columns=all_nan_pct_cols)
     return view.to_string(index=False, formatters=formatters)
 
 
