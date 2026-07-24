@@ -311,6 +311,7 @@ def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
             preferred.extend(
                 [
                     f"spx_{tag}_put_vol",
+                    f"spx_{tag}_put_vol_chg_pct",
                     f"spx_{tag}_put_vol_pct",
                     f"spx_{tag}_put_oi",
                     f"spx_{tag}_put_oi_chg",
@@ -401,6 +402,7 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
             vol_col = f"spx_{tag}_put_vol"
             if vol_col in out.columns:
                 vol = pd.to_numeric(out[vol_col], errors="coerce")
+                out[f"spx_{tag}_put_vol_chg_pct"] = vol.div(vol.shift().where(vol.shift() != 0)).sub(1).mul(100).round(1)
                 out[f"spx_{tag}_put_vol_oi_ratio"] = vol.div(oi.where(oi != 0)).round(3)
     out["flow_risk_off_level"] = np.where(armed_any, "RED", "GREEN")
     return order_flow_columns(out)
@@ -408,8 +410,15 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
 
 def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) -> str:
     """Compact volume/OI/VX counts as truncated thousands for console output only."""
-    # 打印时隐藏的低信息列(CSV 中仍保留)
-    hidden_cols = {"vx1_hedge_net_vx", "vx2_hedge_net_vx", "vx1_top_call_strike", "vx2_top_call_strike", "vx2_vx1_call_vol_ratio"}
+    # 打印时隐藏的低信息列(CSV 中仍保留); 各 SPX 桶的 OI 绝对值变化隐藏, 只看百分比
+    hidden_cols = {
+        "vx1_hedge_net_vx",
+        "vx2_hedge_net_vx",
+        "vx1_top_call_strike",
+        "vx2_top_call_strike",
+        "vx2_vx1_call_vol_ratio",
+        *(f"spx_{tag}_put_oi_chg" for tag in SPX_BUCKETS),
+    }
 
     def compact_thousands(value: float) -> str:
         return f"{int(value / 1_000)}k" if abs(value) >= 1_000 else f"{value:.0f}"
@@ -419,13 +428,20 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) ->
     # 分位列冷启动期全为 NaN, 整列不显示
     all_nan_pct_cols = [col for col in view.columns if col.endswith("_vol_pct") and view[col].isna().all()]
     view = view.drop(columns=all_nan_pct_cols)
-    # 打印时列名缩短: vx1_ -> 1_, vx2_ -> 2_, 但每组开头的 vx*_expiry 保持原名(CSV 列名不变)
-    keep_full = {"vx1_expiry", "vx2_expiry"}
+    # 打印时列名缩短: vx1_ -> 1_, vx2_ -> 2_, spx_tac_ -> tac_, spx_vix_ -> vix_,
+    # 但每组开头的 vx*_expiry / spx_*_put_vol 保持原名(CSV 列名不变)
+    keep_full = {"vx1_expiry", "vx2_expiry", "spx_tac_put_vol", "spx_vix_put_vol"}
 
     def short_name(c: str) -> str:
         if c in keep_full:
             return c
-        return c.replace("vx1_", "1_").replace("vx2_", "2_").replace("_chg_pct", "_chg%")
+        return (
+            c.replace("vx1_", "1_")
+            .replace("vx2_", "2_")
+            .replace("spx_tac_", "tac_")
+            .replace("spx_vix_", "vix_")
+            .replace("_chg_pct", "_chg%")
+        )
 
     view = view.rename(columns=short_name)
 
