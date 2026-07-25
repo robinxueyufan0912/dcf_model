@@ -616,20 +616,40 @@ def print_date_range(df: pd.DataFrame, start: str, end: str, cols: list[str] | N
         print(df.loc[mask])
 
 
-def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Save and print the daily VIX-call and SPX-put flow features."""
+def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+    """Save and print the daily VIX-call and SPX-put flow features.
+
+    Options do not trade on weekends/holidays. Cboe's delayed-quote JSON still
+    returns the last session's chain then, so a weekend cron run would save a
+    fake row dated on the weekend (and with DTE buckets shifted by the weekend
+    date). On non-trading days: no fetch and no new history row, but still
+    print the tables from the saved history.
+    """
     data_dir = Path(data_dir)
     vix_history_path = data_dir / "vix_call_flow_history.csv"
     spx_history_path = data_dir / "spx_put_flow_history.csv"
-    option_schedule = build_vx_monthly_schedule(end_date, end_date + dt.timedelta(days=365), holidays)
-    vx_settlement_dates = [item["fsd"] for item in option_schedule if item["fsd"] >= end_date]
 
-    vix_hist = vix_daily_snapshot(vix_history_path, vx_settlement_dates)
-    spx_hist = spx_daily_snapshot(spx_history_path)
+    if is_business_day(end_date, holidays):
+        option_schedule = build_vx_monthly_schedule(end_date, end_date + dt.timedelta(days=365), holidays)
+        vx_settlement_dates = [item["fsd"] for item in option_schedule if item["fsd"] >= end_date]
+        vix_hist = vix_daily_snapshot(vix_history_path, vx_settlement_dates)
+        spx_hist = spx_daily_snapshot(spx_history_path)
+        save = True
+    else:
+        print(f"[options flow] {end_date} is not a trading day; showing last saved snapshots")
+        vix_hist = pd.read_csv(vix_history_path, dtype={"Trade Date": str}) if vix_history_path.exists() else pd.DataFrame()
+        spx_hist = pd.read_csv(spx_history_path, dtype={"Trade Date": str}) if spx_history_path.exists() else pd.DataFrame()
+        save = False
+
+    if vix_hist.empty or spx_hist.empty:
+        print("[options flow] no flow history yet")
+        return None
+
     vix_flow_features = add_flow_features(vix_hist)
     spx_flow_features = add_flow_features(spx_hist)
-    vix_flow_features.to_csv(vix_history_path, index=False)
-    spx_flow_features.to_csv(spx_history_path, index=False)
+    if save:
+        vix_flow_features.to_csv(vix_history_path, index=False)
+        spx_flow_features.to_csv(spx_history_path, index=False)
 
     print("/VIX call options flow latest:")
     print(flow_table_to_string(vix_flow_features))

@@ -481,6 +481,15 @@ if __name__ == "__main__":
     vix_hist_file = flow_history_dir / "vix_call_flow_history.csv"
     spx_hist_file = flow_history_dir / "spx_put_flow_history.csv"
 
+    today = los_angeles_today()
+    if today.weekday() >= 5:
+        # 周末期权无交易: 不抓不存, 只打印已有历史(假日由 vix_data_signal 的主守卫覆盖)
+        print(f"[options flow] {today} is a weekend; showing last saved snapshots")
+        for hist_file in (vix_hist_file, spx_hist_file):
+            if hist_file.exists():
+                print(flow_table_to_string(add_flow_features(pd.read_csv(hist_file, dtype={"Trade Date": str}))))
+        raise SystemExit(0)
+
     demo_fsd = ["2026-07-22", "2026-08-19", "2026-09-16", "2026-10-21"]
     vix_hist = vix_daily_snapshot(vix_hist_file, demo_fsd)
     spx_hist = spx_daily_snapshot(spx_hist_file)
