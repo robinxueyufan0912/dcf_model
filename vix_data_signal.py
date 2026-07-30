@@ -917,12 +917,14 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     df_vx1_vx2[selected_col].tail(100).to_csv(f"vix_sell_signal/{end_date}_vx1_hlocv_features.csv")
 
     print(
-        "原理:\n"
-        '    L1: 机构对冲指数下行 -> 买 SPX put -> 推高隐波 -> VIX 被"算"高。\n'
-        "        tac: 3-22  DTE 战术桶 -> 未来1-3周的事件性对冲(周末风险/数据周/战事), 衰减快; 自带彩票churn噪声, 解读时优先看OI变化. \n"
-        "        vix: 23-37 DTE VIX窗 -> 官方VIX计算唯一使用的期限段(近月>23天、次月<37天, 插值出恒定30天波动率), 只有这一桶直接进入VIX公式. \n"
-        "    L2: 机构买 VIX call -> dealer 卖 call -> 为 delta neutral 买同结算日 VX 期货。\n"
-        "        对冲量 = sum(量 x delta / 10)(期权$100/期货$1000)。"
+        "Risk-off原理:\n"
+        "    L0: (VX1)      机构直接对冲买入(养老金/宏观直接买期货)、快速建仓平仓VX1, 战术性、流动性优先的对冲. \n"
+        '    L1: (SPX Put)  机构对冲指数下行 -> 买 SPX put -> 推高隐波 -> VIX 被"算"高。\n'
+        "        spx put tac: 3-22  DTE 战术桶 -> 未来1-3周的事件性对冲(周末风险/数据周/战事), 衰减快; 自带彩票churn噪声, 解读时优先看OI变化. \n"
+        "        spx put vix: 23-37 DTE VIX窗 -> 官方VIX计算唯一使用的期限段(近月>23天、次月<37天, 插值出恒定30天波动率), 只有这一桶直接进入VIX公式. \n"
+        "    L2: (VIX call) VIX call 拉高VX volume原理: 机构买 VIX call -> dealer 卖 call -> 为 delta neutral 买同结算日 VX 期货对冲。\n"
+        "        VX 期货对冲量 = sum(VIX call量 x delta / 10)(期权$100/期货$1000)。\n"
+        "        VX交易量(来自VIX 期权 dealer 对冲): 平时 ~4%，极端日可达 10-20%。"
     )
 
     ### Print selected date range for df_vx1_vx2

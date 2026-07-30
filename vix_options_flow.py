@@ -319,6 +319,13 @@ def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
                     f"spx_{tag}_put_vol_oi_ratio",
                 ]
             )
+            if tag == "vix":
+                preferred.extend(
+                    [
+                        "tac_vix_put_oi",
+                        "tac_vix_put_oi_chg_pct",
+                    ]
+                )
     elif "vx1_call_vol" in flow_features.columns:
         preferred = [
             "Trade Date",
@@ -404,6 +411,15 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
                 vol = pd.to_numeric(out[vol_col], errors="coerce")
                 out[f"spx_{tag}_put_vol_chg_pct"] = vol.div(vol.shift().where(vol.shift() != 0)).sub(1).mul(100).round(1)
                 out[f"spx_{tag}_put_vol_oi_ratio"] = vol.div(oi.where(oi != 0)).round(3)
+
+    # 3-37 DTE 合计 OI，用于观察战术桶和 VIX 窗的整体保护仓位。
+    tac_vix_oi_cols = ["spx_tac_put_oi", "spx_vix_put_oi"]
+    if set(tac_vix_oi_cols).issubset(out.columns):
+        tac_vix_oi = out[tac_vix_oi_cols].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=2)
+        out["tac_vix_put_oi"] = tac_vix_oi
+        out["tac_vix_put_oi_chg_pct"] = (
+            tac_vix_oi.div(tac_vix_oi.shift().where(tac_vix_oi.shift() != 0)).sub(1).mul(100).round(1)
+        )
     out["flow_risk_off_level"] = np.where(armed_any, "RED", "GREEN")
     return order_flow_columns(out)
 
