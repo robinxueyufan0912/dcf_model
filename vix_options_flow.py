@@ -9,7 +9,7 @@ vix_options_flow.py — risk-off 期权流量模块(精简版)
 
 原理:
     L1: 机构对冲指数下行 -> 买 SPX put。按期限分三桶解读(见 SPX_BUCKETS):
-        战术桶(3-22DTE)=近端事件对冲; VIX窗(23-37DTE)=唯一直接进入VIX计算的
+        战术桶(1-22DTE)=近端事件对冲; VIX窗(23-37DTE)=唯一直接进入VIX计算的
         期限段(官方方法论: >23天且<37天, 插值出恒定30天波动率);
         结构桶(38-90DTE)=中期战略保护。SPX全链~64%是0DTE噪音, 已排除。
     L2: 机构买 VIX call -> dealer 卖 call -> 为 delta neutral 买同结算日 VX 期货。
@@ -61,16 +61,17 @@ CALL_VOL_ARMED_PERCENTILE = 90.0  # VX1/VX2 对应 VIX call 量分位 >= 90 -> �
 PROT_PUT_ARMED_PERCENTILE = 90.0  # SPX 保护区 put 量分位 >= 90 -> 指数保护爆量
 FLOW_PERCENTILE_LOOKBACK = 252
 FLOW_MIN_ROWS = 60  # 冷启动期不报警
+SPX_IMPLIED_MOVE_EXPIRIES = 5
 
 # ---------------- SPX put 分桶定义 ----------------
 # 三个期限桶, 语义不同, 分开计分(避免单一21-90桶把"近端事件对冲"和"中期仓位"混在一起):
-#   tac: 3-22 DTE  战术桶  -> 未来1-3周的事件性对冲(周末风险/数据周/战事), 衰减快;
+#   tac: 1-22 DTE  战术桶  -> 未来1天至3周的事件性对冲(周末风险/数据周/战事), 衰减快;
 #                            自带彩票churn噪声, 解读时优先看OI变化
 #   vix: 23-37 DTE VIX窗   -> 官方VIX计算唯一使用的期限段(近月>23天、次月<37天,
 #                            插值出恒定30天波动率), 只有这一桶直接进入VIX公式
 #   str: 38-90 DTE 结构桶  -> 中期战略保护/波动率期限结构仓位, 与VIX现货联系弱
 SPX_BUCKETS = {
-    "tac": (3, 22),
+    "tac": (1, 22),
     "vix": (23, 37),
     # "str": (38, 90)
 }
@@ -242,6 +243,144 @@ def fetch_spx_options_chain(root: str = "_SPX", timeout: int = 120) -> tuple[pd.
     return df, ts, meta
 
 
+def _spx_atm_straddle_mid(chain_for_expiry: pd.DataFrame, spot: float) -> tuple[float, float] | None:
+    """Return (ATM strike, call-mid + put-mid), preferring PM-settled SPXW when both series exist."""
+    candidate_groups: list[pd.DataFrame] = []
+    if "option" in chain_for_expiry.columns:
+        is_weekly = chain_for_expiry["option"].astype(str).str.startswith("SPXW")
+        weekly = chain_for_expiry.loc[is_weekly]
+        standard = chain_for_expiry.loc[~is_weekly]
+        if not weekly.empty:
+            candidate_groups.append(weekly)
+        if not standard.empty:
+            candidate_groups.append(standard)
+    else:
+        candidate_groups.append(chain_for_expiry)
+
+    for group in candidate_groups:
+        quotes = group.copy()
+        for col in ["strike", "bid", "ask"]:
+            quotes[col] = pd.to_numeric(quotes[col], errors="coerce")
+        quotes = quotes[
+            quotes["cp"].isin(["C", "P"])
+            & quotes["strike"].notna()
+            & quotes["bid"].notna()
+            & quotes["ask"].notna()
+            & (quotes["bid"] > 0)
+            & (quotes["ask"] > 0)
+            & (quotes["ask"] >= quotes["bid"])
+        ].copy()
+        if quotes.empty:
+            continue
+
+        quotes["mid"] = (quotes["bid"] + quotes["ask"]) / 2.0
+        paired = quotes.pivot_table(index="strike", columns="cp", values="mid", aggfunc="first")
+        if not {"C", "P"}.issubset(paired.columns):
+            continue
+        paired = paired.dropna(subset=["C", "P"])
+        if paired.empty:
+            continue
+
+        strike = float(min(paired.index, key=lambda value: abs(float(value) - spot)))
+        straddle_mid = float(paired.loc[strike, "C"] + paired.loc[strike, "P"])
+        if np.isfinite(straddle_mid) and straddle_mid > 0:
+            return strike, straddle_mid
+    return None
+
+
+def spx_daily_implied_moves(
+    chain: pd.DataFrame,
+    spot: float,
+    trade_date: str | dt.date,
+    *,
+    num_expiries: int = SPX_IMPLIED_MOVE_EXPIRIES,
+) -> pd.DataFrame:
+    """Estimate forward one-session SPX moves from adjacent-expiry ATM straddles.
+
+    CumMove is ATM-straddle midpoint / spot. DayMove removes the previous
+    expiry's squared CumMove, treating the straddle move as proportional to
+    expected absolute return and assuming variance adds across intervals.
+    DayMove is therefore a comparable straddle-equivalent proxy, not a 1-sigma
+    forecast. A Monday interval includes weekend risk.
+    """
+    columns = ["expiry", "dte", "gap_days", "atm_strike", "straddle_mid", "cum_move_pct", "day_move_pct", "day_move_points"]
+    if num_expiries < 1:
+        raise ValueError("num_expiries must be at least 1")
+    if not np.isfinite(spot) or spot <= 0:
+        raise ValueError("spot must be a positive finite number")
+    required_cols = {"expiry", "cp", "strike", "bid", "ask"}
+    missing_cols = required_cols.difference(chain.columns)
+    if missing_cols:
+        raise ValueError(f"SPX chain is missing required columns: {sorted(missing_cols)}")
+
+    asof = pd.Timestamp(trade_date).normalize()
+    work = chain.copy()
+    work["expiry"] = pd.to_datetime(work["expiry"], errors="coerce").dt.normalize()
+    future_expiries = work.loc[work["expiry"] > asof, "expiry"].dropna().drop_duplicates().sort_values()
+
+    rows: list[dict] = []
+    previous_expiry = asof
+    previous_cum_move_pct = 0.0
+    for expiry in future_expiries:
+        atm = _spx_atm_straddle_mid(work.loc[work["expiry"] == expiry], spot)
+        if atm is None:
+            continue
+        strike, straddle_mid = atm
+        cum_move_pct = straddle_mid / spot * 100.0
+        forward_move_variance = cum_move_pct**2 - previous_cum_move_pct**2
+        day_move_pct = float(np.sqrt(forward_move_variance)) if forward_move_variance >= 0 else np.nan
+        day_move_points = day_move_pct / 100.0 * spot if np.isfinite(day_move_pct) else np.nan
+        rows.append(
+            {
+                "expiry": expiry.date().isoformat(),
+                "dte": int((expiry - asof).days),
+                "gap_days": int((expiry - previous_expiry).days),
+                "atm_strike": strike,
+                "straddle_mid": straddle_mid,
+                "cum_move_pct": cum_move_pct,
+                "day_move_pct": day_move_pct,
+                "day_move_points": day_move_points,
+            }
+        )
+        previous_expiry = expiry
+        previous_cum_move_pct = cum_move_pct
+        if len(rows) >= num_expiries:
+            break
+    return pd.DataFrame(rows, columns=columns)
+
+
+def spx_implied_move_table_to_string(implied_moves: pd.DataFrame) -> str:
+    """Format the next-expiry SPX implied-move table for the console report."""
+    if implied_moves.empty:
+        return "(no valid future SPX expiry quotes)"
+
+    view = implied_moves.rename(
+        columns={
+            "expiry": "Expiry",
+            "dte": "DTE",
+            "gap_days": "GapD",
+            "atm_strike": "ATM",
+            "straddle_mid": "Straddle",
+            "cum_move_pct": "CumMove",
+            "day_move_pct": "DayMove",
+            "day_move_points": "DayPts",
+        }
+    ).copy()
+    view["Expiry"] = pd.to_datetime(view["Expiry"], errors="coerce").dt.strftime("%m-%d")
+
+    def format_pct(value: float) -> str:
+        return "" if pd.isna(value) else f"{value:.3f}%"
+
+    formatters = {
+        "ATM": lambda value: f"{value:.0f}",
+        "Straddle": lambda value: f"{value:.1f}",
+        "CumMove": format_pct,
+        "DayMove": format_pct,
+        "DayPts": lambda value: "" if pd.isna(value) else f"{value:.1f}",
+    }
+    return view.to_string(index=False, formatters=formatters, na_rep="")
+
+
 def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) -> dict:
     """
     SPX put 分桶聚合: 每桶取虚值 3%-20% 的 put，输出总 volume 和总 OI。
@@ -262,12 +401,17 @@ def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) 
     return row
 
 
-def spx_daily_snapshot(history_path: str | Path, *, trade_date: str | None = None) -> pd.DataFrame:
+def spx_daily_snapshot(
+    history_path: str | Path,
+    *,
+    trade_date: str | None = None,
+    fetched: tuple[pd.DataFrame, str, dict] | None = None,
+) -> pd.DataFrame:
     history_path = Path(history_path)
     history_path.parent.mkdir(parents=True, exist_ok=True)
     trade_date = trade_date or los_angeles_today().isoformat()
 
-    chain, ts, meta = fetch_spx_options_chain()
+    chain, ts, meta = fetched if fetched is not None else fetch_spx_options_chain()
     spot = float(meta.get("close") or meta.get("current_price"))
     row = aggregate_spx_protection(chain, spot, trade_date)
 
@@ -412,7 +556,7 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
                 out[f"spx_{tag}_put_vol_chg_pct"] = vol.div(vol.shift().where(vol.shift() != 0)).sub(1).mul(100).round(1)
                 out[f"spx_{tag}_put_vol_oi_ratio"] = vol.div(oi.where(oi != 0)).round(3)
 
-    # 3-37 DTE 合计 OI，用于观察战术桶和 VIX 窗的整体保护仓位。
+    # 1-37 DTE 合计 OI，用于观察战术桶和 VIX 窗的整体保护仓位。
     tac_vix_oi_cols = ["spx_tac_put_oi", "spx_vix_put_oi"]
     if set(tac_vix_oi_cols).issubset(out.columns):
         tac_vix_oi = out[tac_vix_oi_cols].apply(pd.to_numeric, errors="coerce").sum(axis=1, min_count=2)
@@ -444,9 +588,9 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) ->
     # 分位列冷启动期全为 NaN, 整列不显示
     all_nan_pct_cols = [col for col in view.columns if col.endswith("_vol_pct") and view[col].isna().all()]
     view = view.drop(columns=all_nan_pct_cols)
-    # 打印时列名缩短: vx1_ -> 1_, vx2_ -> 2_, spx_tac_ -> tac_, spx_vix_ -> vix_,
-    # 但每组开头的 vx*_expiry / spx_*_put_vol 保持原名(CSV 列名不变)
-    keep_full = {"vx1_expiry", "vx2_expiry", "spx_tac_put_vol", "spx_vix_put_vol"}
+    # 打印时列名缩短: vx1_ -> 1_, vx2_ -> 2_, spx_tac_ -> tac_, spx_vix_ -> vix_;
+    # 仅保留 vx expiry 的完整名称(CSV 列名不变)。
+    keep_full = {"vx1_expiry", "vx2_expiry"}
 
     def short_name(c: str) -> str:
         if c in keep_full:

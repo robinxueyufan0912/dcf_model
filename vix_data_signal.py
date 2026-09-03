@@ -12,7 +12,15 @@ import numpy as np
 import pandas as pd
 
 from market_time import NEW_YORK_TZ, los_angeles_today, to_los_angeles_time
-from vix_options_flow import add_flow_features, flow_table_to_string, spx_daily_snapshot, vix_daily_snapshot
+from vix_options_flow import (
+    add_flow_features,
+    fetch_spx_options_chain,
+    flow_table_to_string,
+    spx_daily_implied_moves,
+    spx_daily_snapshot,
+    spx_implied_move_table_to_string,
+    vix_daily_snapshot,
+)
 
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_columns", None)
@@ -628,12 +636,17 @@ def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_d
     data_dir = Path(data_dir)
     vix_history_path = data_dir / "vix_call_flow_history.csv"
     spx_history_path = data_dir / "spx_put_flow_history.csv"
+    spx_implied_moves = None
 
     if is_business_day(end_date, holidays):
         option_schedule = build_vx_monthly_schedule(end_date, end_date + dt.timedelta(days=365), holidays)
         vx_settlement_dates = [item["fsd"] for item in option_schedule if item["fsd"] >= end_date]
         vix_hist = vix_daily_snapshot(vix_history_path, vx_settlement_dates)
-        spx_hist = spx_daily_snapshot(spx_history_path)
+        spx_fetched = fetch_spx_options_chain()
+        spx_chain, _spx_ts, spx_meta = spx_fetched
+        spx_spot = float(spx_meta.get("close") or spx_meta.get("current_price"))
+        spx_implied_moves = spx_daily_implied_moves(spx_chain, spx_spot, end_date)
+        spx_hist = spx_daily_snapshot(spx_history_path, trade_date=end_date.isoformat(), fetched=spx_fetched)
         save = True
     else:
         print(f"[options flow] {end_date} is not a trading day; showing last saved snapshots")
@@ -655,6 +668,14 @@ def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_d
     print(flow_table_to_string(vix_flow_features))
     print("/SPX put protection flow latest:")
     print(flow_table_to_string(spx_flow_features))
+    print("/SPX daily implied move next 5 expiries:")
+    if spx_implied_moves is None:
+        print("(unavailable: no fresh SPX chain on a non-trading day)")
+    else:
+        print(spx_implied_move_table_to_string(spx_implied_moves))
+        print("# DayMove = 相邻到期 ATM straddle/spot 的方差差分; 是预期绝对 move 代理, 不是 1-sigma.")
+        print("# GapD > 1 包含周末/假日风险.")
+        print("# DayMove 空白表示累计 straddle 方差不单调; 保留为空而不强制归零.")
     return vix_flow_features, spx_flow_features
 
 
@@ -920,7 +941,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
         "Risk-off原理:\n"
         "    L0: (VX1)      机构直接对冲买入(养老金/宏观直接买期货)、快速建仓平仓VX1, 战术性、流动性优先的对冲. \n"
         '    L1: (SPX Put)  机构对冲指数下行 -> 买 SPX put -> 推高隐波 -> VIX 被"算"高。\n'
-        "        spx put tac: 3-22  DTE 战术桶 -> 未来1-3周的事件性对冲(周末风险/数据周/战事), 衰减快; 自带彩票churn噪声, 解读时优先看OI变化. \n"
+        "        spx put tac: 1-22  DTE 战术桶 -> 未来1天至3周的事件性对冲(周末风险/数据周/战事), 衰减快; 自带彩票churn噪声, 解读时优先看OI变化. \n"
         "        spx put vix: 23-37 DTE VIX窗 -> 官方VIX计算唯一使用的期限段(近月>23天、次月<37天, 插值出恒定30天波动率), 只有这一桶直接进入VIX公式. \n"
         "    L2: (VIX call) VIX call 拉高VX volume原理: 机构买 VIX call -> dealer 卖 call -> 为 delta neutral 买同结算日 VX 期货对冲。\n"
         "        VX 期货对冲量 = sum(VIX call量 x delta / 10)(期权$100/期货$1000)。\n"
