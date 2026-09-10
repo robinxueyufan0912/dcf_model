@@ -164,7 +164,7 @@ def pivot_vix_for_signal(flow_linked: pd.DataFrame, trade_date: str) -> dict:
             continue
         s = sub.iloc[0]
         row[f"{tag.lower()}_call_vol"] = s["call_vol"]
-        row[f"{tag.lower()}_expiry"] = pd.Timestamp(s["expiry"]).date().isoformat()
+        row[f"{tag.lower()}_exp"] = pd.Timestamp(s["expiry"]).date().isoformat()
         row[f"{tag.lower()}_cp_vol_ratio"] = round(s["cp_vol_ratio"], 2)
         row[f"{tag.lower()}_cp_oi_ratio"] = round(s["cp_oi_ratio"], 2)
         row[f"{tag.lower()}_hedge_net_vx"] = s["hedge_net_vx"]
@@ -473,7 +473,7 @@ def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
     elif "vx1_call_vol" in flow_features.columns:
         preferred = [
             "Trade Date",
-            "vx1_expiry",
+            "vx1_exp",
             "vx1_call_vol",
             "vx1_call_vol_chg_pct",
             "vx1_call_vol_pct",
@@ -483,7 +483,7 @@ def order_flow_columns(flow_features: pd.DataFrame) -> pd.DataFrame:
             "vx1_cp_oi_ratio_chg_pct",
             "vx1_hedge_net_vx",
             "vx1_top_call_strike",
-            "vx2_expiry",
+            "vx2_exp",
             "vx2_call_vol",
             "vx2_call_vol_chg_pct",
             "vx2_call_vol_pct",
@@ -589,12 +589,18 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) ->
     all_nan_pct_cols = [col for col in view.columns if col.endswith("_vol_pct") and view[col].isna().all()]
     view = view.drop(columns=all_nan_pct_cols)
     # 打印时列名缩短: vx1_ -> 1_, vx2_ -> 2_, spx_tac_ -> tac_, spx_vix_ -> vix_;
-    # 仅保留 vx expiry 的完整名称(CSV 列名不变)。
-    keep_full = {"vx1_expiry", "vx2_expiry"}
+    # 仅保留 vx exp 的完整名称(CSV 列名不变)。
+    keep_full = {"vx1_exp", "vx2_exp"}
 
     def short_name(c: str) -> str:
         if c in keep_full:
             return c
+        if c in {"spx_tac_put_vol_oi_ratio", "spx_vix_put_vol_oi_ratio"}:
+            return c.removeprefix("spx_").replace("_vol_oi_ratio", "_vol/oi")
+        if c in {"vx1_call_vol", "vx1_call_vol_chg_pct", "vx2_call_vol", "vx2_call_vol_chg_pct"}:
+            c = c.replace("_call_", "_c_")
+        if c in {"vx1_cp_vol_ratio", "vx1_cp_vol_ratio_chg_pct", "vx2_cp_vol_ratio", "vx2_cp_vol_ratio_chg_pct"}:
+            c = c.replace("_cp_vol_ratio", "_c/p_vol")
         return (
             c.replace("vx1_", "1_")
             .replace("vx2_", "2_")
@@ -606,12 +612,12 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) ->
     view = view.rename(columns=short_name)
 
     compact_suffixes = ("_vol", "_oi", "_oi_chg", "_vx")
-    formatters = {col: compact_thousands for col in view.columns if col.endswith(compact_suffixes)}
+    formatters = {col: compact_thousands for col in view.columns if col.endswith(compact_suffixes) and "_c/p_" not in col}
     formatters.update({col: lambda value: f"{value:.1f}%" for col in view.columns if col.endswith("_chg%")})
     price_cols = [col for col in view.columns if col == "spx_close" or col.endswith("_strike")]
     formatters.update({col: lambda value: str(int(value)) for col in price_cols})
-    # expiry 只显示月-日(CSV 中仍是完整日期)
-    formatters.update({col: lambda value: str(value)[5:] for col in view.columns if col.endswith("_expiry")})
+    # exp 只显示月-日(CSV 中仍是完整日期)
+    formatters.update({col: lambda value: str(value)[5:] for col in view.columns if col.endswith("_exp")})
     return view.to_string(index=False, formatters=formatters)
 
 
