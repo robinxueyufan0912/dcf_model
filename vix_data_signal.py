@@ -1,6 +1,7 @@
 import contextlib
 import datetime as dt
 import json
+import os
 import re
 import ssl
 import sys
@@ -8,17 +9,41 @@ import time
 import urllib.request
 from pathlib import Path
 
+# 无论在哪里运行，整个进程都按美国西海岸时间(America/Los_Angeles, 自动处理 PST/PDT)计时：
+# datetime.now() / date.today() / time.localtime() / 文件 mtime 等所有"本地时间"都是洛杉矶时间。
+# 必须在导入 pandas 及本项目其他模块之前设置。
+os.environ["TZ"] = "America/Los_Angeles"
+if hasattr(time, "tzset"):  # Windows 没有 tzset; 那里依赖 market_time 中显式的美西时区调用
+    time.tzset()
+
 import numpy as np
 import pandas as pd
 
-from market_time import NEW_YORK_TZ, los_angeles_today, to_los_angeles_time
+from market_time import (
+    NEW_YORK_TZ,
+    format_cboe_timestamp,
+    last_completed_session,
+    los_angeles_now,
+    los_angeles_today,
+    snapshot_session_date,
+    to_los_angeles_time,
+)
 from vix_options_flow import (
+    DAILY_OPTION_STATS_TRADING_DAYS,
+    add_daily_option_stats_features,
     add_flow_features,
+    chain_totals_row,
+    daily_option_stats_table_to_string,
     fetch_spx_options_chain,
+    fetch_vix_options_chain,
     flow_table_to_string,
+    partial_rows,
+    read_flow_history,
     spx_daily_implied_moves,
     spx_daily_snapshot,
     spx_implied_move_table_to_string,
+    spx_spot,
+    update_daily_option_stats,
     vix_daily_snapshot,
 )
 
@@ -50,6 +75,54 @@ _REQUEST_HEADERS = {
     "Accept": "*/*",
 }
 DOWNLOAD_REQUEST_DELAY = 1.0  # seconds between cboe requests
+
+# US market full-day closures, used for trading days, VX settlement dates and session detection.
+MARKET_HOLIDAYS: frozenset[dt.date] = frozenset(
+    dt.date.fromisoformat(s)
+    for s in [
+        "2023-01-02",  # New Year's Day (observed)
+        "2023-01-16",  # Martin Luther King, Jr. Day
+        "2023-02-20",  # Presidents' Day (Washington’s Birthday)
+        "2023-04-07",  # Good Friday
+        "2023-05-29",  # Memorial Day
+        "2023-06-19",  # Juneteenth National Independence Day
+        "2023-07-04",  # Independence Day
+        "2023-09-04",  # Labor Day
+        "2023-11-23",  # Thanksgiving Day
+        "2023-12-25",  # Christmas Day
+        "2024-01-01",  # New Year's Day
+        "2024-01-15",  # Martin Luther King, Jr. Day
+        "2024-02-19",  # Presidents' Day (Washington’s Birthday)
+        "2024-03-29",  # Good Friday
+        "2024-05-27",  # Memorial Day
+        "2024-06-19",  # Juneteenth National Independence Day
+        "2024-07-04",  # Independence Day
+        "2024-09-02",  # Labor Day
+        "2024-11-28",  # Thanksgiving Day
+        "2024-12-25",  # Christmas Day
+        "2025-01-01",
+        "2025-01-09",
+        "2025-01-20",
+        "2025-02-17",
+        "2025-04-18",
+        "2025-05-26",
+        "2025-06-19",
+        "2025-07-04",
+        "2025-09-01",
+        "2025-11-27",
+        "2025-12-25",
+        "2026-01-01",
+        "2026-01-19",
+        "2026-02-16",
+        "2026-04-03",
+        "2026-05-25",
+        "2026-06-19",
+        "2026-07-03",
+        "2026-09-07",
+        "2026-11-26",
+        "2026-12-25",
+    ]
+)
 
 
 def _make_ssl_context(verify_ssl: bool = True, cafile: str | None = None) -> ssl.SSLContext:
@@ -245,10 +318,6 @@ def vx_expiry_table(x: dt.date, n_months_back: int, holidays: set[dt.date] | Non
     return rows
 
 
-def parse_holidays(date_strs: list[str]) -> set[dt.date]:
-    return {dt.date.fromisoformat(s) for s in date_strs}
-
-
 def load_vx_csvs(data_dir: str | Path) -> pd.DataFrame:
     """Load all VX CSVs under data_dir into a single DataFrame."""
     data_dir = Path(data_dir)
@@ -259,14 +328,29 @@ def load_vx_csvs(data_dir: str | Path) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True)
 
 
+def _csv_has_trade_date(path: Path, trade_date: dt.date) -> bool:
+    try:
+        dates = pd.read_csv(path, usecols=["Trade Date"])["Trade Date"]
+    except (OSError, ValueError, pd.errors.ParserError, pd.errors.EmptyDataError):
+        return False
+    return bool((dates.astype(str) == trade_date.isoformat()).any())
+
+
 def download_cboe_vx_csvs(
-    cboe_vx_futures_hlocv_data: dict[str, str], data_dir: str | Path | None = None, *, verify_ssl: bool = True, cafile: str | None = None
+    cboe_vx_futures_hlocv_data: dict[str, str],
+    data_dir: str | Path | None = None,
+    *,
+    holidays: set[dt.date] | frozenset[dt.date] = MARKET_HOLIDAYS,
+    verify_ssl: bool = True,
+    cafile: str | None = None,
 ) -> list[Path]:
     """Download CSVs to data_dir using dict keys as filenames.
 
     Skips contracts that already settled (their CSV is immutable) and files
-    already refreshed today. On download failure, keeps the existing local
-    file so the report can still run on cached data.
+    that already contain the latest completed session (US West Coast clock).
+    A file downloaded earlier the same day, before that session settled, is
+    downloaded again. On download failure, keeps the existing local file so
+    the report can still run on cached data.
     """
     if data_dir is None:
         data_dir = Path(__file__).resolve().parent / "data"
@@ -274,14 +358,13 @@ def download_cboe_vx_csvs(
     data_dir.mkdir(parents=True, exist_ok=True)
     context = _make_ssl_context(verify_ssl, cafile)
 
-    today = los_angeles_today()
+    latest_session = last_completed_session(holidays=holidays)
     saved_paths = []
     for name, url in cboe_vx_futures_hlocv_data.items():
         out_path = data_dir / f"{name}.csv"
         contract_ym = vx_contract_month_from_name(name)
-        settled = contract_ym is not None and contract_ym < (today.year, today.month)
-        fresh_today = out_path.exists() and dt.date.fromtimestamp(out_path.stat().st_mtime) >= today
-        if out_path.exists() and (settled or fresh_today):
+        settled = contract_ym is not None and vix_monthly_final_settlement(*contract_ym, holidays) < latest_session
+        if out_path.exists() and (settled or _csv_has_trade_date(out_path, latest_session)):
             continue
         try:
             payload = _url_download(url, context)
@@ -348,9 +431,19 @@ def download_cboe_index_latest_quotes(index_names: list[str], *, verify_ssl: boo
 
 
 def append_cboe_latest_index_quote(
-    history: pd.DataFrame, index_name: str, quote: dict[str, object] | None, *, max_date: dt.date | None = None
+    history: pd.DataFrame,
+    index_name: str,
+    quote: dict[str, object] | None,
+    *,
+    holidays: set[dt.date] | frozenset[dt.date] = MARKET_HOLIDAYS,
+    max_date: dt.date | None = None,
 ) -> pd.DataFrame:
-    """Append a newer quote date only when the official daily history has not published it."""
+    """Append a finished session's close only when the official daily history has not published it.
+
+    The quote must have been generated after its session became final on the
+    US West Coast clock (13:30 PT), and its last trade must belong to that
+    session. An intraday value is never appended as a close.
+    """
     if not quote:
         return history
 
@@ -362,17 +455,19 @@ def append_cboe_latest_index_quote(
     if not isinstance(data, dict):
         return history
 
-    # Prefer the quote's actual market time. Cboe's top-level timestamp is UTC
-    # without an offset and can already be on the next date when Los Angeles is
-    # still on the current trading date.
-    quote_ts = to_los_angeles_time(data.get("last_trade_time"), naive_timezone=NEW_YORK_TZ)
-    if quote_ts is None:
-        quote_ts = to_los_angeles_time(quote.get("timestamp"))
+    # Cboe's top-level timestamp is when the quote was generated (UTC, no offset);
+    # last_trade_time is New York time.
+    generated_at = to_los_angeles_time(quote.get("timestamp"))
+    last_trade = to_los_angeles_time(data.get("last_trade_time"), naive_timezone=NEW_YORK_TZ)
     quote_value = pd.to_numeric(data.get("close", data.get("current_price")), errors="coerce")
-    if quote_ts is None or pd.isna(quote_value):
+    if generated_at is None or last_trade is None or pd.isna(quote_value):
         return history
 
-    quote_date = quote_ts.date()
+    session = snapshot_session_date(generated_at, holidays)
+    if session is None or last_trade.date() != session:
+        return history
+
+    quote_date = session
     if max_date is not None and quote_date > max_date:
         return history
 
@@ -624,35 +719,72 @@ def print_date_range(df: pd.DataFrame, start: str, end: str, cols: list[str] | N
         print(df.loc[mask])
 
 
-def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+OptionChains = tuple[tuple[pd.DataFrame, dt.datetime | None] | None, tuple[pd.DataFrame, dt.datetime | None, dict] | None]
+
+
+def fetch_option_chains() -> OptionChains:
+    """Download the VIX and SPX delayed-quote chains once per run; a failed download yields None."""
+    fetched = []
+    for name, fetch in (("vix", fetch_vix_options_chain), ("spx", fetch_spx_options_chain)):
+        try:
+            fetched.append(fetch())
+        except Exception as exc:
+            print(f"[{name} chain] fetch failed ({exc})", file=sys.stderr)
+            fetched.append(None)
+    return fetched[0], fetched[1]
+
+
+def run_options_flow_snapshots(
+    end_date: dt.date, holidays: set[dt.date] | frozenset[dt.date], data_dir: str | Path, chains: OptionChains
+) -> tuple[pd.DataFrame, pd.DataFrame] | None:
     """Save and print the daily VIX-call and SPX-put flow features.
 
-    Options do not trade on weekends/holidays. Cboe's delayed-quote JSON still
-    returns the last session's chain then, so a weekend cron run would save a
-    fake row dated on the weekend (and with DTE buckets shifted by the weekend
-    date). On non-trading days: no fetch and no new history row, but still
-    print the tables from the saved history.
+    Each snapshot is saved under the trading day its Cboe data belongs to,
+    worked out from Cboe's own timestamp on the US West Coast clock, never
+    under the run date:
+      - intraday data (06:30-13:30 PT on a trading day) is saved as that day's
+        partial row (marked * in the tables); a later run overwrites it;
+      - before the open, on weekends/holidays, or when Cboe's feed is stale, the
+        data belongs to an earlier session, so only that session's row is
+        rewritten and no fake row appears for end_date.
+    A day's row is only replaced by newer Cboe data. If a chain could not be
+    downloaded (None in `chains`), the saved history is still printed.
     """
+    vix_fetched, spx_fetched = chains
     data_dir = Path(data_dir)
     vix_history_path = data_dir / "vix_call_flow_history.csv"
     spx_history_path = data_dir / "spx_put_flow_history.csv"
-    spx_implied_moves = None
+    # All settlement dates: link_to_vx picks VX1/VX2 relative to the snapshot's own
+    # session, which can be earlier than end_date.
+    vx_settlement_dates = [item["fsd"] for item in build_vx_monthly_schedule(end_date, end_date + dt.timedelta(days=365), holidays)]
+    saved_sessions: dict[str, dt.date | None] = {}
 
-    if is_business_day(end_date, holidays):
-        option_schedule = build_vx_monthly_schedule(end_date, end_date + dt.timedelta(days=365), holidays)
-        vx_settlement_dates = [item["fsd"] for item in option_schedule if item["fsd"] >= end_date]
-        vix_hist = vix_daily_snapshot(vix_history_path, vx_settlement_dates)
-        spx_fetched = fetch_spx_options_chain()
-        spx_chain, _spx_ts, spx_meta = spx_fetched
-        spx_spot = float(spx_meta.get("close") or spx_meta.get("current_price"))
-        spx_implied_moves = spx_daily_implied_moves(spx_chain, spx_spot, end_date)
-        spx_hist = spx_daily_snapshot(spx_history_path, trade_date=end_date.isoformat(), fetched=spx_fetched)
-        save = True
+    if vix_fetched is not None:
+        vix_hist, saved_sessions["VIX"], _ = vix_daily_snapshot(vix_history_path, vx_settlement_dates, holidays=holidays, fetched=vix_fetched)
     else:
-        print(f"[options flow] {end_date} is not a trading day; showing last saved snapshots")
-        vix_hist = pd.read_csv(vix_history_path, dtype={"Trade Date": str}) if vix_history_path.exists() else pd.DataFrame()
-        spx_hist = pd.read_csv(spx_history_path, dtype={"Trade Date": str}) if spx_history_path.exists() else pd.DataFrame()
-        save = False
+        print("[vix snapshot] no chain this run; showing saved history")
+        vix_hist = read_flow_history(vix_history_path)
+
+    spx_implied_moves = None
+    spx_source_ts = None
+    if spx_fetched is not None:
+        spx_chain, spx_source_ts, spx_meta = spx_fetched
+        spx_hist, saved_sessions["SPX"], _ = spx_daily_snapshot(spx_history_path, holidays=holidays, fetched=spx_fetched)
+        implied_move_asof = spx_source_ts.date() if spx_source_ts is not None else end_date
+        spx_implied_moves = spx_daily_implied_moves(spx_chain, spx_spot(spx_meta), implied_move_asof)
+    else:
+        print("[spx snapshot] no chain this run; showing saved history")
+        spx_hist = read_flow_history(spx_history_path)
+
+    for name, session in saved_sessions.items():
+        if session is not None and session < end_date:
+            print(f"[options flow] Cboe {name} data belongs to the {session} session, so no {end_date} row was saved")
+    for name, hist in (("VIX", vix_hist), ("SPX", spx_hist)):
+        if len(hist) > 1:
+            older = hist.iloc[:-1]
+            stale = older.loc[partial_rows(older), "Trade Date"].tolist()
+            if stale:
+                print(f"[options flow] {name} rows still intraday-partial: {', '.join(stale)} (a run outside market hours the next day did not replace them)")
 
     if vix_hist.empty or spx_hist.empty:
         print("[options flow] no flow history yet")
@@ -660,17 +792,19 @@ def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_d
 
     vix_flow_features = add_flow_features(vix_hist)
     spx_flow_features = add_flow_features(spx_hist)
-    if save:
+    if saved_sessions.get("VIX") is not None:
         vix_flow_features.to_csv(vix_history_path, index=False)
+    if saved_sessions.get("SPX") is not None:
         spx_flow_features.to_csv(spx_history_path, index=False)
 
     print("/VIX call options flow latest:")
     print(flow_table_to_string(vix_flow_features))
     print("/SPX put protection flow latest:")
     print(flow_table_to_string(spx_flow_features))
-    print("/SPX daily implied move next 5 expiries:")
+    print("# * = 盘中不完整数据(成交量只到当时, 日变化和分位偏低); 收盘后(13:30 PT 起)再运行会用当天完整数据覆盖.")
+    print(f"/SPX daily implied move next 5 expiries (Cboe data as of {format_cboe_timestamp(spx_source_ts)}):")
     if spx_implied_moves is None:
-        print("(unavailable: no fresh SPX chain on a non-trading day)")
+        print("(unavailable: SPX chain could not be fetched)")
     else:
         print(spx_implied_move_table_to_string(spx_implied_moves))
         print("# DayMove = 相邻到期 ATM straddle/spot 的方差差分; 是预期绝对 move 代理, 不是 1-sigma.")
@@ -679,60 +813,52 @@ def run_options_flow_snapshots(end_date: dt.date, holidays: set[dt.date], data_d
     return vix_flow_features, spx_flow_features
 
 
-def run_vx_eod_report(end_date: dt.date) -> None:
-    HOLIDAYS_2023 = [
-        "2023-01-02",  # New Year's Day (observed)
-        "2023-01-16",  # Martin Luther King, Jr. Day
-        "2023-02-20",  # Presidents' Day (Washington’s Birthday)
-        "2023-04-07",  # Good Friday
-        "2023-05-29",  # Memorial Day
-        "2023-06-19",  # Juneteenth National Independence Day
-        "2023-07-04",  # Independence Day
-        "2023-09-04",  # Labor Day
-        "2023-11-23",  # Thanksgiving Day
-        "2023-12-25",  # Christmas Day
-    ]
+def run_daily_option_stats(holidays: set[dt.date] | frozenset[dt.date], data_dir: str | Path, chains: OptionChains) -> pd.DataFrame | None:
+    """Update and print the daily VIX/SPX/equity option totals table (report only, feeds no other signal).
 
-    HOLIDAYS_2024 = [
-        "2024-01-01",  # New Year's Day
-        "2024-01-15",  # Martin Luther King, Jr. Day
-        "2024-02-19",  # Presidents' Day (Washington’s Birthday)
-        "2024-03-29",  # Good Friday
-        "2024-05-27",  # Memorial Day
-        "2024-06-19",  # Juneteenth National Independence Day
-        "2024-07-04",  # Independence Day
-        "2024-09-02",  # Labor Day
-        "2024-11-28",  # Thanksgiving Day
-        "2024-12-25",  # Christmas Day
-    ]
+    The newest day comes from this run's _VIX/_SPX.json chains: the latest
+    completed session, or today's partial totals while the market is open
+    (shown as json*, overwritten by a later run). Every earlier day comes from
+    Cboe's daily_options statistics, which also replace a day's json row on
+    later runs. If the chains are stale, the latest session falls back to
+    daily_options too.
+    """
+    latest_session = last_completed_session(holidays=holidays)
+    recent_days = (latest_session - dt.timedelta(days=i) for i in range(DAILY_OPTION_STATS_TRADING_DAYS * 2))
+    trading_days = sorted([d for d in recent_days if is_business_day(d, holidays)][:DAILY_OPTION_STATS_TRADING_DAYS])
+    latest_row = chain_totals_row(*chains, holidays)
+    if latest_row is not None:
+        is_latest = latest_row["complete"] and latest_row["Trade Date"] == latest_session.isoformat()
+        is_today_intraday = not latest_row["complete"] and latest_row["Trade Date"] > latest_session.isoformat()
+        if not (is_latest or is_today_intraday):
+            latest_row = None
+    if latest_row is None:
+        print(f"[cboe stats] option chains are not for {latest_session}; using daily_options for that day")
+    hist = update_daily_option_stats(Path(data_dir) / "cboe_daily_option_stats_history.csv", trading_days, latest_row=latest_row)
+    if hist.empty:
+        print("[cboe stats] no daily option statistics yet")
+        return None
 
-    holidays = parse_holidays(
-        HOLIDAYS_2023
-        + HOLIDAYS_2024
-        + [
-            "2025-01-01",
-            "2025-01-09",
-            "2025-01-20",
-            "2025-02-17",
-            "2025-04-18",
-            "2025-05-26",
-            "2025-06-19",
-            "2025-07-04",
-            "2025-09-01",
-            "2025-11-27",
-            "2025-12-25",
-            "2026-01-01",
-            "2026-01-19",
-            "2026-02-16",
-            "2026-04-03",
-            "2026-05-25",
-            "2026-06-19",
-            "2026-07-03",
-            "2026-09-07",
-            "2026-11-26",
-            "2026-12-25",
-        ]
+    features = add_daily_option_stats_features(hist)
+    print("/Cboe daily option totals (whole product, all expiries/strikes):")
+    print(daily_option_stats_table_to_string(features))
+    saved = set(hist["Trade Date"])
+    missing = [d for d in trading_days if d.isoformat() not in saved]
+    if missing == [latest_session]:
+        print(f"# {latest_session} not published by Cboe yet (usually ~18:20 PT); it is fetched on the next run.")
+    elif missing:
+        print(f"# {len(missing)} trading day(s) still missing ({missing[0]} ... {missing[-1]}); the next run fetches them.")
+    print(
+        "# pct = 近 100 个交易日分位(含当日). Stats_Lvl = RED: VIX call 量 / SPX put 量 / SPX P/C 任一分位 >= 90.\n"
+        "# VIX_P/C 越低越偏单边买 call; EQ_P/C 为个股期权恐慌, 极端高位常是反向信号, 两者仅观察.\n"
+        "# Src: json = 最新交易日由 _VIX/_SPX.json 现算(没有个股, EQ_P/C 空白), 之后的运行换成 daily_options 官方数据;\n"
+        "#      json* = 盘中不完整数据(成交量只到当时), 收盘后(13:30 PT 起)再运行会覆盖."
     )
+    return features
+
+
+def run_vx_eod_report(end_date: dt.date) -> None:
+    holidays = set(MARKET_HOLIDAYS)
 
     # ===== find the VX1 contract month for each trading day [start_date, end_date] =====
     start_date = dt.date(2021, 1, 1)
@@ -935,7 +1061,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
 
     print("# Y=True, -=False, empty=missing")
     print(feature_display.to_string(index=False, na_rep=""))
-    df_vx1_vx2[selected_col].tail(100).to_csv(f"vix_sell_signal/{end_date}_vx1_hlocv_features.csv")
+    df_vx1_vx2[selected_col].tail(100).to_csv(root_dir / "vix_sell_signal" / f"{end_date}_vx1_hlocv_features.csv")
 
     print(
         "Risk-off原理:\n"
@@ -967,10 +1093,17 @@ def run_vx_eod_report(end_date: dt.date) -> None:
 
     # ===== VIX call / SPX put options flow snapshots =====
     # A blocked/failed options download must not kill the main report.
+    option_chains = fetch_option_chains()
     try:
-        run_options_flow_snapshots(end_date, holidays, data_dir / "vix_call_spx_put")
+        run_options_flow_snapshots(end_date, holidays, data_dir / "vix_call_spx_put", option_chains)
     except Exception as exc:
         print(f"[options flow] snapshot failed: {exc}", file=sys.stderr)
+
+    # ===== Cboe daily option totals (report table only; reuses the chains downloaded above) =====
+    try:
+        run_daily_option_stats(holidays, data_dir / "vix_call_spx_put", option_chains)
+    except Exception as exc:
+        print(f"[cboe stats] failed: {exc}", file=sys.stderr)
 
 
 # 示例
@@ -993,4 +1126,9 @@ if __name__ == "__main__":
                 file.flush()
 
     with report_path.open("w", encoding="utf-8") as report_file, contextlib.redirect_stdout(_Tee(sys.stdout, report_file)):
+        now = los_angeles_now()
+        print(
+            f"[clock] US West Coast time: {now:%Y-%m-%d %H:%M:%S %Z}; report date: {end_date}; "
+            f"latest completed session: {last_completed_session(now, MARKET_HOLIDAYS)}"
+        )
         run_vx_eod_report(end_date)

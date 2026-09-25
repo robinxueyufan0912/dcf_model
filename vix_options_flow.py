@@ -19,7 +19,10 @@ vix_options_flow.py — risk-off 期权流量模块(精简版)
     https://cdn.cboe.com/api/global/delayed_quotes/options/_VIX.json   (~0.3MB)
     https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json   (~13MB, 含SPXW)
 
-运行: 每日美股收盘后一次(cron 21:30 UTC), 幂等落盘, 历史自动累积。
+运行: 每日美股收盘后一次(美西 13:30 PT 之后), 幂等落盘, 历史自动累积。
+    每行的 Trade Date 取自 Cboe 数据自带的生成时间(按美西时钟换算成所属交易日),
+    不取运行日期: 盘中(06:30-13:30 PT)的残缺数据不落盘; Cboe 源停更时只会
+    重写它实际所属的旧交易日, 不会伪造出当天的一行。
     免费源无逐日历史; 回填或客户方向拆分需付费 Cboe DataShop Open-Close。
     OI 滞后一个交易日, OI 日变化按 T-1 口径解读。
 
@@ -30,15 +33,19 @@ from __future__ import annotations
 
 import datetime as dt
 import gzip
+import http.client
 import json
 import ssl
+import sys
+import time
 import urllib.request
+from collections.abc import Collection
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from market_time import format_cboe_timestamp, los_angeles_today
+from market_time import format_cboe_timestamp, los_angeles_today, snapshot_trade_date, to_los_angeles_time
 
 
 def _make_ssl_context() -> ssl.SSLContext:
@@ -81,7 +88,8 @@ DEBUG = False
 # ================================================================ 通用抓取
 
 
-def _fetch_chain(root: str, timeout: int = 120) -> tuple[list[dict], str, dict]:
+def _fetch_chain(root: str, timeout: int = 120) -> tuple[list[dict], dt.datetime | None, dict]:
+    """Return (option records, Cboe generation time in Los Angeles, underlying quote)."""
     url = CBOE_DELAYED_QUOTES_URL.format(root=root)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept-Encoding": "gzip"})
     try:
@@ -99,21 +107,23 @@ def _fetch_chain(root: str, timeout: int = 120) -> tuple[list[dict], str, dict]:
         body = gzip.decompress(body)
     raw = json.loads(body)
     meta = {k: v for k, v in raw["data"].items() if k != "options"}
-    return raw["data"]["options"], format_cboe_timestamp(raw.get("timestamp")), meta
+    return raw["data"]["options"], to_los_angeles_time(raw.get("timestamp")), meta
 
 
 # ================================================================ L2: VIX call 流
 
 
-def fetch_vix_options_chain(root: str = "_VIX", timeout: int = 30) -> tuple[pd.DataFrame, str]:
+def fetch_vix_options_chain(root: str = "_VIX", timeout: int = 30) -> tuple[pd.DataFrame, dt.datetime | None]:
+    """Whole VIX chain: monthly (root VIX) and weekly (root VIXW) series; `root` tells them apart."""
     records, ts, _meta = _fetch_chain(root, timeout)
     df = pd.DataFrame(records)
+    # symbol = root + YYMMDD + C/P + 8-digit strike, ex: "VIX260722C00010000", "VIXW260930C00015000"
     sym = df["option"].astype(str)
-    df = df[sym.str[3] != "W"].copy()  # we got VIX and VIWX, filter out VIXW
-    sym = df["option"].astype(str)
-    df["expiry"] = pd.to_datetime("20" + sym.str[3:5] + "-" + sym.str[5:7] + "-" + sym.str[7:9])  # ex:"option":"VIX260722C00010000",
-    df["cp"] = sym.str[9]  # ex:"option":"VIX260722C00010000", sym.str[9] is C or P
-    df["strike"] = sym.str[10:].astype(float) / 1000.0
+    tail = sym.str[-15:]
+    df["root"] = sym.str[:-15]
+    df["expiry"] = pd.to_datetime("20" + tail.str[0:2] + "-" + tail.str[2:4] + "-" + tail.str[4:6])
+    df["cp"] = tail.str[6]
+    df["strike"] = tail.str[7:].astype(float) / 1000.0
     for col in ["volume", "open_interest", "delta", "bid", "ask", "iv"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     return df, ts
@@ -149,10 +159,12 @@ def aggregate_vix_calls(chain: pd.DataFrame) -> pd.DataFrame:
 def link_to_vx(flow: pd.DataFrame, vx_settlement_dates: list[str | dt.date], *, asof_date: str | dt.date | None = None) -> pd.DataFrame:
     fsd = pd.to_datetime([pd.Timestamp(x) for x in vx_settlement_dates]).sort_values()
     asof = pd.Timestamp(asof_date or los_angeles_today())
-    future_fsd = fsd[fsd >= asof].tolist()
+    # VIX options are AM-settled: the series for a settlement date stops trading the business day
+    # before, so on the settlement date itself VX1 is already the next contract.
+    future_fsd = fsd[fsd > asof].tolist()
     labels = {pd.Timestamp(d): (f"VX{i + 1}" if i < 2 else "VX3+") for i, d in enumerate(future_fsd)}
     out = flow.copy()
-    out["vx_link"] = out["expiry"].map(lambda e: "EXPIRED" if pd.Timestamp(e) < asof else labels.get(pd.Timestamp(e), "VX3+"))
+    out["vx_link"] = out["expiry"].map(lambda e: "EXPIRED" if pd.Timestamp(e) <= asof else labels.get(pd.Timestamp(e), "VX3+"))
     return out
 
 
@@ -172,39 +184,110 @@ def pivot_vix_for_signal(flow_linked: pd.DataFrame, trade_date: str) -> dict:
     return row
 
 
-def vix_daily_snapshot(history_path: str | Path, vx_settlement_dates: list[str | dt.date], *, trade_date: str | None = None) -> pd.DataFrame:
+def read_flow_history(history_path: str | Path) -> pd.DataFrame:
     history_path = Path(history_path)
-    history_path.parent.mkdir(parents=True, exist_ok=True)
-    trade_date = trade_date or los_angeles_today().isoformat()
+    return pd.read_csv(history_path, dtype={"Trade Date": str}) if history_path.exists() else pd.DataFrame()
 
-    chain, ts = fetch_vix_options_chain()
+
+def partial_rows(hist: pd.DataFrame) -> pd.Series:
+    """True for rows saved as intraday partial. The flag may come back from CSV as bool,
+    "False" or 0.0; rows without it (saved before the flag existed) are complete."""
+    if "complete" not in hist.columns:
+        return pd.Series(False, index=hist.index)
+    return hist["complete"].map(lambda value: str(value).strip().lower() in ("false", "0", "0.0"))
+
+
+def _replaces(existing: pd.Series, row: dict) -> bool:
+    """Whether `row` may overwrite `existing` (same trade date): only newer Cboe data wins.
+
+    Rows saved before `source_ts` existed are complete with an unknown time, so only
+    complete data may replace them.
+    """
+    old_ts = existing.get("source_ts")
+    if not isinstance(old_ts, str) or not old_ts:
+        return bool(row.get("complete", True))
+    return dt.datetime.fromisoformat(row["source_ts"]) > dt.datetime.fromisoformat(old_ts)
+
+
+def _upsert_flow_history(history_path: Path, row: dict) -> tuple[pd.DataFrame, bool]:
+    """Save `row` under its Trade Date unless that date already holds newer data. Returns (history, saved)."""
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    hist = read_flow_history(history_path)
+    if not hist.empty:
+        same_day = hist[hist["Trade Date"] == row["Trade Date"]]
+        if not same_day.empty and not _replaces(same_day.iloc[-1], row):
+            return hist, False
+        hist = hist[hist["Trade Date"] != row["Trade Date"]]
+    hist = pd.concat([hist, pd.DataFrame([row])], ignore_index=True).sort_values("Trade Date").reset_index(drop=True)
+    hist.to_csv(history_path, index=False)
+    return hist, True
+
+
+def _snapshot_session(tag: str, source_ts: dt.datetime | None, holidays: Collection[dt.date]) -> tuple[dt.date, bool] | None:
+    """(trading day, complete) the fetched chain belongs to; None (reason printed) if it has no timestamp.
+
+    Intraday data (06:30-13:30 PT) is that day's, marked incomplete; a later run
+    with newer data overwrites it.
+    """
+    if source_ts is None:
+        print(f"[{tag} snapshot] not saved: Cboe response has no timestamp")
+        return None
+    return snapshot_trade_date(source_ts, holidays)
+
+
+def _snapshot_meta(ts: dt.datetime, complete: bool) -> dict:
+    return {"source_ts": ts.isoformat(), "complete": complete}
+
+
+def _report_snapshot(tag: str, trade_date: str, ts: dt.datetime, complete: bool, saved: bool, rows: int) -> None:
+    stamp = format_cboe_timestamp(ts)
+    if not saved:
+        print(f"[{tag} snapshot] {trade_date} kept: saved data is not older than Cboe data at {stamp}")
+    elif complete:
+        print(f"[{tag} snapshot] {trade_date} saved (source ts={stamp}), history rows={rows}")
+    else:
+        print(f"[{tag} snapshot] {trade_date} saved as INTRADAY partial (source ts={stamp}); a run after 13:30 PT overwrites it, history rows={rows}")
+
+
+def vix_daily_snapshot(
+    history_path: str | Path,
+    vx_settlement_dates: list[str | dt.date],
+    *,
+    holidays: Collection[dt.date] = (),
+    fetched: tuple[pd.DataFrame, dt.datetime | None] | None = None,
+) -> tuple[pd.DataFrame, dt.date | None, bool]:
+    """Fetch the VIX chain and upsert it under the trading day its Cboe timestamp belongs to.
+
+    Returns (history, saved day, complete); the day is None when nothing was saved.
+    """
+    history_path = Path(history_path)
+    chain, ts = fetched if fetched is not None else fetch_vix_options_chain()
+    resolved = _snapshot_session("vix", ts, holidays)
+    if resolved is None:
+        return read_flow_history(history_path), None, False
+    session, complete = resolved
+    trade_date = session.isoformat()
 
     if DEBUG:
         print("/vix_opt_chain")
         print(chain.head(30).to_string(index=False))
 
-    vix_calls_by_expiry = aggregate_vix_calls(chain)
+    vix_calls_by_expiry = aggregate_vix_calls(chain[chain["root"] == "VIX"])  # monthly series only; they map to VX futures
 
     if DEBUG:
         print("/vix_opt_groupby_expiry")
         print(vix_calls_by_expiry.to_string(index=False))
 
     flow = link_to_vx(vix_calls_by_expiry, vx_settlement_dates, asof_date=trade_date)
-    row = pivot_vix_for_signal(flow, trade_date)
-
-    hist = pd.read_csv(history_path, dtype={"Trade Date": str}) if history_path.exists() else pd.DataFrame()
-    if not hist.empty:
-        hist = hist[hist["Trade Date"] != trade_date]
-    hist = pd.concat([hist, pd.DataFrame([row])], ignore_index=True).sort_values("Trade Date").reset_index(drop=True)
-    hist.to_csv(history_path, index=False)
-    print(f"[vix snapshot] {trade_date} saved (source ts={ts}), history rows={len(hist)}")
-    return hist
+    hist, saved = _upsert_flow_history(history_path, {**pivot_vix_for_signal(flow, trade_date), **_snapshot_meta(ts, complete)})
+    _report_snapshot("vix", trade_date, ts, complete, saved, len(hist))
+    return hist, (session if saved else None), complete
 
 
 # ================================================================ L1: SPX put 保护区流
 
 
-def fetch_spx_options_chain(root: str = "_SPX", timeout: int = 120) -> tuple[pd.DataFrame, str, dict]:
+def fetch_spx_options_chain(root: str = "_SPX", timeout: int = 120) -> tuple[pd.DataFrame, dt.datetime | None, dict]:
     # {
     #     "option": "SPX260821C00200000",
     #     "bid": 7231.3,
@@ -404,24 +487,30 @@ def aggregate_spx_protection(chain: pd.DataFrame, spot: float, trade_date: str) 
 def spx_daily_snapshot(
     history_path: str | Path,
     *,
-    trade_date: str | None = None,
-    fetched: tuple[pd.DataFrame, str, dict] | None = None,
-) -> pd.DataFrame:
+    holidays: Collection[dt.date] = (),
+    fetched: tuple[pd.DataFrame, dt.datetime | None, dict] | None = None,
+) -> tuple[pd.DataFrame, dt.date | None, bool]:
+    """Fetch the SPX chain and upsert it under the trading day its Cboe timestamp belongs to.
+
+    Returns (history, saved day, complete); the day is None when nothing was saved.
+    """
     history_path = Path(history_path)
-    history_path.parent.mkdir(parents=True, exist_ok=True)
-    trade_date = trade_date or los_angeles_today().isoformat()
-
     chain, ts, meta = fetched if fetched is not None else fetch_spx_options_chain()
-    spot = float(meta.get("close") or meta.get("current_price"))
-    row = aggregate_spx_protection(chain, spot, trade_date)
+    resolved = _snapshot_session("spx", ts, holidays)
+    if resolved is None:
+        return read_flow_history(history_path), None, False
+    session, complete = resolved
+    trade_date = session.isoformat()
 
-    hist = pd.read_csv(history_path, dtype={"Trade Date": str}) if history_path.exists() else pd.DataFrame()
-    if not hist.empty:
-        hist = hist[hist["Trade Date"] != trade_date]
-    hist = pd.concat([hist, pd.DataFrame([row])], ignore_index=True).sort_values("Trade Date").reset_index(drop=True)
-    hist.to_csv(history_path, index=False)
-    print(f"[spx snapshot] {trade_date} saved (source ts={ts}), history rows={len(hist)}")
-    return hist
+    spot = spx_spot(meta)
+    hist, saved = _upsert_flow_history(history_path, {**aggregate_spx_protection(chain, spot, trade_date), **_snapshot_meta(ts, complete)})
+    _report_snapshot("spx", trade_date, ts, complete, saved, len(hist))
+    return hist, (session if saved else None), complete
+
+
+def spx_spot(meta: dict) -> float:
+    """SPX level of the fetched chain: the live price intraday, which equals the close after the close."""
+    return float(meta.get("current_price") or meta.get("close"))
 
 
 # ================================================================ 特征与信号
@@ -429,6 +518,8 @@ def spx_daily_snapshot(
 
 def _trailing_pct(s: pd.Series, lookback: int, min_rows: int) -> pd.Series:
     def _pct(arr: np.ndarray) -> float:
+        if np.isnan(arr[-1]):  # no value today -> no percentile (not yesterday's)
+            return np.nan
         arr = arr[~np.isnan(arr)]
         if len(arr) < min_rows:
             return np.nan
@@ -577,13 +668,17 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) ->
         "vx1_top_call_strike",
         "vx2_top_call_strike",
         "vx2_vx1_call_vol_ratio",
+        "source_ts",
+        "complete",
         *(f"spx_{tag}_put_oi_chg" for tag in SPX_BUCKETS),
     }
 
     def compact_thousands(value: float) -> str:
         return f"{int(value / 1_000)}k" if abs(value) >= 1_000 else f"{value:.0f}"
 
-    view = order_flow_columns(flow_features).tail(tail_rows)
+    view = order_flow_columns(flow_features).tail(tail_rows).copy()
+    partial = partial_rows(view)  # 盘中不完整的行: 日期加 *
+    view["Trade Date"] = view["Trade Date"].where(~partial, view["Trade Date"] + "*")
     view = view.drop(columns=[c for c in view.columns if c in hidden_cols])
     # 分位列冷启动期全为 NaN, 整列不显示
     all_nan_pct_cols = [col for col in view.columns if col.endswith("_vol_pct") and view[col].isna().all()]
@@ -631,6 +726,226 @@ def merge_into_signal(vx_features: pd.DataFrame, *flow_tables: pd.DataFrame) -> 
     return out
 
 
+# ================================================================ Cboe 每日期权统计(产品汇总, 可回溯)
+# 只用于报告里的 "Cboe daily option totals" 表, 不参与其他信号。
+# 与 delayed_quotes 期权链是两条独立的数据管线(期权链停更时这里照常发布), 且按日期取文件,
+# 可一次性补齐, 分位特征不需要冷启动。粒度是全产品合计(所有到期日/行权价), 不分 VX1/VX2 或虚值桶。
+# 确保最近 DAILY_OPTION_STATS_TRADING_DAYS 个交易日齐全(首次整段下载, 之后只追加新的一天);
+# 窗口之外的旧行保留不删, 本地历史随运行持续累积。
+# 最新交易日用 _VIX/_SPX.json 期权链现算的全产品合计(收盘后即可得, source=json, 没有个股期权);
+# 之前的每一天用 daily_options 官方统计(source=daily_options), json 行在之后的运行中被它替换。
+# 每个交易日约 18:20 PT 发布当天文件; 未发布或非交易日返回 403 AccessDenied。
+# OI 为 OCC 清算口径(前一交易日收盘持仓)。
+CBOE_DAILY_OPTION_STATS_URL = "https://cdn.cboe.com/data/us/options/market_statistics/daily/{date}_daily_options"
+DAILY_OPTION_STATS_TRADING_DAYS = 100  # 必须齐全的最近交易日数, 也是分位窗口(约 5 个月)
+DAILY_OPTION_STATS_REQUEST_DELAY = 1.0  # cdn.cboe.com 在 Cloudflare 后面, 连续请求要间隔
+DAILY_OPTION_STATS_MAX_CONSECUTIVE_FAILURES = 3  # 连续失败这么多天视为网络中断, 本次停止
+DAILY_OPTION_STATS_SAVE_EVERY = 50  # 长回填中途定期落盘
+DAILY_STATS_ARMED_PERCENTILE = 90.0
+SOURCE_DAILY_OPTIONS = "daily_options"
+SOURCE_JSON = "json"
+_DAILY_STATS_PRODUCTS = {  # JSON 产品名 -> 列前缀
+    "CBOE VOLATILITY INDEX (VIX)": "vix",
+    "SPX + SPXW": "spx",
+    "EQUITY OPTIONS": "equity",
+}
+# (特征列, 是否参与报警)
+_DAILY_STATS_FEATURE_SPECS = [
+    ("vix_call_vol", True),  # VIX call 全天成交爆量 = 波动率保护需求
+    ("spx_put_vol", True),  # SPX put 全天成交爆量 = 指数下行保护需求
+    ("spx_pc_ratio", True),  # SPX put/call 成交比偏高 = 保护相对投机更重
+    ("vix_pc_ratio", False),  # 越低越偏单边买 VIX call; 仅观察
+    ("equity_pc_ratio", False),  # 个股期权恐慌; 极端高位常是反向(见底)信号, 仅观察
+]
+
+
+def fetch_cboe_daily_option_stats(trade_date: dt.date, timeout: int = 30, attempts: int = 3) -> dict | None:
+    """Cboe 当日期权统计 JSON; 尚未发布或非交易日返回 None。
+
+    偶发的连接错误(SSL 断连、超时、5xx)退避重试, 重试用尽才抛出; 其他 HTTP 错误直接抛出。
+    """
+    url = CBOE_DAILY_OPTION_STATS_URL.format(date=trade_date.isoformat())
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX) as resp:
+                return json.load(resp)
+        except urllib.error.HTTPError as e:
+            # S3 对不存在的文件返回 403 AccessDenied(XML); Cloudflare 拦截的 403 是 HTML, 不在此列
+            if e.code == 404 or (e.code == 403 and b"AccessDenied" in e.read(1024)):
+                return None
+            if e.code < 500 or attempt == attempts:
+                raise
+        except (OSError, http.client.HTTPException, json.JSONDecodeError):  # URLError/SSL/超时/断连/残缺响应
+            if attempt == attempts:
+                raise
+        time.sleep(2 * attempt)
+    raise AssertionError("unreachable")
+
+
+def parse_cboe_daily_option_stats(payload: dict, trade_date: dt.date) -> dict:
+    row: dict = {"Trade Date": trade_date.isoformat(), "source": SOURCE_DAILY_OPTIONS}
+    for product, prefix in _DAILY_STATS_PRODUCTS.items():
+        try:
+            lines = {line["name"]: line for line in payload[product]}
+            vol, oi = lines["VOLUME"], lines["OPEN INTEREST"]
+        except (KeyError, TypeError) as e:
+            raise ValueError(f"Cboe daily stats {trade_date}: unexpected format for {product!r}") from e
+        row[f"{prefix}_call_vol"] = int(vol["call"])
+        row[f"{prefix}_put_vol"] = int(vol["put"])
+        row[f"{prefix}_call_oi"] = int(oi["call"])
+        row[f"{prefix}_put_oi"] = int(oi["put"])
+        row[f"{prefix}_pc_ratio"] = round(vol["put"] / vol["call"], 3) if vol["call"] else np.nan
+    return row
+
+
+def chain_totals_row(
+    vix_fetched: tuple[pd.DataFrame, dt.datetime | None] | None,
+    spx_fetched: tuple[pd.DataFrame, dt.datetime | None, dict] | None,
+    holidays: Collection[dt.date] = (),
+) -> dict | None:
+    """把 _VIX/_SPX.json 两条期权链汇总成一行 daily_options 同口径的全产品合计(source=json)。
+
+    两条链必须属于同一个交易日(按 Cboe 时间戳、美西时钟判断), 否则返回 None。盘中也返回当天的行,
+    标记 complete=False。VIX 含周度 VIXW, SPX 含 SPXW; 期权链里没有个股期权, equity_* 留空。
+    """
+    if vix_fetched is None or spx_fetched is None:
+        return None
+    (vix_chain, vix_ts), (spx_chain, spx_ts, _meta) = vix_fetched, spx_fetched
+    if vix_ts is None or spx_ts is None:
+        return None
+    (session, vix_complete), (spx_session, spx_complete) = snapshot_trade_date(vix_ts, holidays), snapshot_trade_date(spx_ts, holidays)
+    if spx_session != session:
+        return None
+
+    row: dict = {"Trade Date": session.isoformat(), "source": SOURCE_JSON, **_snapshot_meta(max(vix_ts, spx_ts), vix_complete and spx_complete)}
+    for prefix, chain in (("vix", vix_chain), ("spx", spx_chain)):
+        calls, puts = chain[chain["cp"] == "C"], chain[chain["cp"] == "P"]
+        call_vol, put_vol = int(calls["volume"].sum()), int(puts["volume"].sum())
+        row[f"{prefix}_call_vol"] = call_vol
+        row[f"{prefix}_put_vol"] = put_vol
+        row[f"{prefix}_call_oi"] = int(calls["open_interest"].sum())
+        row[f"{prefix}_put_oi"] = int(puts["open_interest"].sum())
+        row[f"{prefix}_pc_ratio"] = round(put_vol / call_vol, 3) if call_vol else np.nan
+    for col in ("call_vol", "put_vol", "call_oi", "put_oi", "pc_ratio"):
+        row[f"equity_{col}"] = np.nan
+    return row
+
+
+def update_daily_option_stats(history_path: str | Path, trading_days: list[dt.date], *, latest_row: dict | None = None) -> pd.DataFrame:
+    """更新每日期权统计历史。
+
+    - latest_row: 最新交易日由期权链现算的一行(source=json)。给了就直接写入, 不再为那天下载 daily_options。
+    - 其余每一天: 历史里缺的、或之前由 json 临时写入的, 从 daily_options 下载官方数据(替换 json 行)。
+      首次即整段回填; 已有的官方行(包括 trading_days 之外更早的)全部保留。
+
+    未发布的日子(当天约 18:20 PT 之前)跳过; 单日抓取失败也跳过, 连续多日失败才停止;
+    已抓到的每隔一段、以及结束时都会保存。
+    """
+    history_path = Path(history_path)
+    hist = read_flow_history(history_path)
+    if not hist.empty:
+        hist["source"] = hist["source"].fillna(SOURCE_DAILY_OPTIONS) if "source" in hist.columns else SOURCE_DAILY_OPTIONS
+    official = set(hist.loc[hist["source"] == SOURCE_DAILY_OPTIONS, "Trade Date"]) if not hist.empty else set()
+    json_day = latest_row["Trade Date"] if latest_row is not None else None
+    todo = [d for d in trading_days if d.isoformat() not in official and d.isoformat() != json_day]
+    if len(todo) > 20:
+        print(f"[cboe stats] fetching {len(todo)} missing trading days (~{len(todo) * DAILY_OPTION_STATS_REQUEST_DELAY / 60:.0f} min)")
+
+    rows: list[dict] = []
+
+    def save() -> None:
+        nonlocal hist, rows
+        if not rows:
+            return
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        hist = pd.concat([hist, pd.DataFrame(rows)], ignore_index=True)
+        hist = hist.drop_duplicates("Trade Date", keep="last").sort_values("Trade Date").reset_index(drop=True)
+        hist.to_csv(history_path, index=False)
+        rows = []
+
+    failed: list[dt.date] = []
+    consecutive_failures = 0
+    for i, d in enumerate(todo):
+        if i:
+            time.sleep(DAILY_OPTION_STATS_REQUEST_DELAY)
+        try:
+            payload = fetch_cboe_daily_option_stats(d)
+        except Exception as exc:
+            failed.append(d)
+            consecutive_failures += 1
+            print(f"[cboe stats] {d} fetch failed ({exc})", file=sys.stderr)
+            if consecutive_failures >= DAILY_OPTION_STATS_MAX_CONSECUTIVE_FAILURES:
+                print(f"[cboe stats] {consecutive_failures} failures in a row; stopping, the next run retries the rest", file=sys.stderr)
+                break
+            continue
+        consecutive_failures = 0
+        if payload is not None:
+            rows.append(parse_cboe_daily_option_stats(payload, d))
+            if len(rows) >= DAILY_OPTION_STATS_SAVE_EVERY:
+                save()
+    if latest_row is not None:
+        same_day = hist[hist["Trade Date"] == latest_row["Trade Date"]] if not hist.empty else hist
+        if same_day.empty or _replaces(same_day.iloc[-1], latest_row):
+            rows.append(latest_row)
+    save()
+    if failed:
+        print(f"[cboe stats] {len(failed)} day(s) failed and will be retried next run: {', '.join(map(str, failed[:5]))}{' ...' if len(failed) > 5 else ''}")
+    return hist
+
+
+def add_daily_option_stats_features(
+    hist: pd.DataFrame, *, lookback: int = DAILY_OPTION_STATS_TRADING_DAYS, min_rows: int = FLOW_MIN_ROWS
+) -> pd.DataFrame:
+    """100 日分位(含当日)与红绿灯: 任一报警项分位 >= 90 -> stats_risk_off_level = RED。
+
+    不足 min_rows 行的早期行不计分位(空白), 避免样本太少时乱报警。
+    """
+    out = hist.copy().sort_values("Trade Date").reset_index(drop=True)
+    armed_any = pd.Series(False, index=out.index)
+    for col, armed in _DAILY_STATS_FEATURE_SPECS:
+        pct = _trailing_pct(pd.to_numeric(out[col], errors="coerce"), lookback, min_rows).round(1)
+        out[f"{col}_pct"] = pct
+        if armed:
+            armed_any = armed_any | (pct >= DAILY_STATS_ARMED_PERCENTILE).fillna(False)
+    for col in ["vix_call_vol", "spx_put_vol"]:
+        vol = pd.to_numeric(out[col], errors="coerce")
+        out[f"{col}_chg_pct"] = vol.div(vol.shift().where(vol.shift() != 0)).sub(1).mul(100).round(1)
+    out["stats_risk_off_level"] = np.where(armed_any, "RED", "GREEN")
+    return out
+
+
+def daily_option_stats_table_to_string(features: pd.DataFrame, *, tail_rows: int = 10) -> str:
+    columns = {
+        "Trade Date": "Trade Date",
+        "vix_call_vol": "VIX_C_vol",
+        "vix_call_vol_chg_pct": "VIX_C_chg%",
+        "vix_call_vol_pct": "VIX_C_pct",
+        "vix_pc_ratio": "VIX_P/C",
+        "spx_put_vol": "SPX_P_vol",
+        "spx_put_vol_chg_pct": "SPX_P_chg%",
+        "spx_put_vol_pct": "SPX_P_pct",
+        "spx_pc_ratio": "SPX_P/C",
+        "spx_pc_ratio_pct": "SPX_P/C_pct",
+        "equity_pc_ratio": "EQ_P/C",
+        "equity_pc_ratio_pct": "EQ_P/C_pct",
+        "stats_risk_off_level": "Stats_Lvl",
+        "source": "Src",
+    }
+    view = features[list(columns)].tail(tail_rows).rename(columns=columns)
+    partial = partial_rows(features.tail(tail_rows)).to_numpy()  # 盘中不完整的 json 行显示 json*
+    view.loc[partial, "Src"] = view.loc[partial, "Src"] + "*"
+
+    def fmt(pattern: str):
+        return lambda value: pattern.format(value)
+
+    formatters = {col: (lambda value: f"{int(value / 1_000)}k") for col in ["VIX_C_vol", "SPX_P_vol"]}
+    formatters.update({col: fmt("{:.1f}%") for col in view.columns if col.endswith("_chg%")})
+    formatters.update({col: fmt("{:.1f}") for col in view.columns if col.endswith("_pct")})
+    formatters.update({col: fmt("{:.2f}") for col in ["VIX_P/C", "SPX_P/C", "EQ_P/C"]})
+    return view.to_string(index=False, formatters=formatters, na_rep="")
+
+
 # ---------------------------------------------------------------- 与 vix_data_signal.py 的 score 接法(参考)
 #   flow_risk_off_level == RED                -> +1~2 (多源任一, 已去重)
 #   或分项: vx1/vx2_call_vol_pct>=90 -> +1 (波动率保护)
@@ -640,28 +955,10 @@ def merge_into_signal(vx_features: pd.DataFrame, *flow_tables: pd.DataFrame) -> 
 #   语义注意: 只有 spx_vix_* 桶(23-37DTE)直接进入VIX计算; tac/str 桶是保护需求本身
 
 if __name__ == "__main__":
-    # cron 21:30 UTC 每日一次。VX结算日用 vix_data_signal.py 的
-    # build_vx_monthly_schedule(...) -> [x["fsd"] for x in schedule] 生成。
-    here = Path(__file__).resolve().parent
-    flow_history_dir = here / "data" / "vix_call_spx_put"
-    vix_hist_file = flow_history_dir / "vix_call_flow_history.csv"
-    spx_hist_file = flow_history_dir / "spx_put_flow_history.csv"
+    # 单独运行时复用 vix_data_signal 的同一流程(假日表、VX 结算日、美西时钟都一致)。
+    # 延迟导入: vix_data_signal 在模块顶部导入本模块。
+    from vix_data_signal import MARKET_HOLIDAYS, fetch_option_chains, run_options_flow_snapshots
 
-    today = los_angeles_today()
-    if today.weekday() >= 5:
-        # 周末期权无交易: 不抓不存, 只打印已有历史(假日由 vix_data_signal 的主守卫覆盖)
-        print(f"[options flow] {today} is a weekend; showing last saved snapshots")
-        for hist_file in (vix_hist_file, spx_hist_file):
-            if hist_file.exists():
-                print(flow_table_to_string(add_flow_features(pd.read_csv(hist_file, dtype={"Trade Date": str}))))
-        raise SystemExit(0)
-
-    demo_fsd = ["2026-07-22", "2026-08-19", "2026-09-16", "2026-10-21"]
-    vix_hist = vix_daily_snapshot(vix_hist_file, demo_fsd)
-    spx_hist = spx_daily_snapshot(spx_hist_file)
-    vix_flow_features = add_flow_features(vix_hist)
-    spx_flow_features = add_flow_features(spx_hist)
-    vix_flow_features.to_csv(vix_hist_file, index=False)
-    spx_flow_features.to_csv(spx_hist_file, index=False)
-    print(flow_table_to_string(vix_flow_features))
-    print(flow_table_to_string(spx_flow_features))
+    run_options_flow_snapshots(
+        los_angeles_today(), MARKET_HOLIDAYS, Path(__file__).resolve().parent / "data" / "vix_call_spx_put", fetch_option_chains()
+    )
