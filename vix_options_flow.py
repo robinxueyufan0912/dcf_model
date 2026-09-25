@@ -88,24 +88,45 @@ DEBUG = False
 # ================================================================ 通用抓取
 
 
+def with_retries(fetch, *, attempts: int = 3):
+    """Call fetch(), retrying transient network failures (SSL drops, timeouts, 5xx, truncated
+    bodies) with a short backoff; the last failure, or any 4xx, is raised."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return fetch()
+        except urllib.error.HTTPError as e:
+            if e.code < 500 or attempt == attempts:
+                raise
+        except (OSError, http.client.HTTPException, json.JSONDecodeError):
+            if attempt == attempts:
+                raise
+        time.sleep(2 * attempt)
+    raise AssertionError("unreachable")
+
+
 def _fetch_chain(root: str, timeout: int = 120) -> tuple[list[dict], dt.datetime | None, dict]:
     """Return (option records, Cboe generation time in Los Angeles, underlying quote)."""
     url = CBOE_DELAYED_QUOTES_URL.format(root=root)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept-Encoding": "gzip"})
-    try:
-        resp = urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX)
-    except urllib.error.URLError as e:
-        if "CERTIFICATE_VERIFY_FAILED" not in str(e):
-            raise
-        print(
-            "[warn] 本地CA证书缺失, 本次临时跳过证书校验。"
-            "彻底修复: 运行 '/Applications/Python 3.x/Install Certificates.command' 或 'pip install -U certifi'"
-        )
-        resp = urllib.request.urlopen(req, timeout=timeout, context=ssl._create_unverified_context())
-    body = resp.read()
-    if resp.headers.get("Content-Encoding") == "gzip":
-        body = gzip.decompress(body)
-    raw = json.loads(body)
+
+    def download() -> dict:
+        try:
+            resp = urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX)
+        except urllib.error.URLError as e:
+            if "CERTIFICATE_VERIFY_FAILED" not in str(e):
+                raise
+            print(
+                "[warn] 本地CA证书缺失, 本次临时跳过证书校验。"
+                "彻底修复: 运行 '/Applications/Python 3.x/Install Certificates.command' 或 'pip install -U certifi'"
+            )
+            resp = urllib.request.urlopen(req, timeout=timeout, context=ssl._create_unverified_context())
+        with resp:
+            body = resp.read()
+            if resp.headers.get("Content-Encoding") == "gzip":
+                body = gzip.decompress(body)
+        return json.loads(body)
+
+    raw = with_retries(download)
     meta = {k: v for k, v in raw["data"].items() if k != "options"}
     return raw["data"]["options"], to_los_angeles_time(raw.get("timestamp")), meta
 
@@ -634,6 +655,15 @@ def add_flow_features(hist: pd.DataFrame, *, lookback: int = FLOW_PERCENTILE_LOO
             vol = pd.to_numeric(out[col], errors="coerce")
             out[f"{col}_chg_pct"] = vol.div(vol.shift().where(vol.shift() != 0)).sub(1).mul(100).round(1)
 
+    # 换月当天(VX1/VX2 对应的到期日变了)前后比的是两份不同合约, 日变化留空
+    for tag in ("vx1", "vx2"):
+        exp_col = f"{tag}_exp"
+        if exp_col in out.columns:
+            rolled = out[exp_col] != out[exp_col].shift()
+            for col in (f"{tag}_call_vol_chg_pct", f"{tag}_cp_vol_ratio_chg_pct", f"{tag}_cp_oi_ratio_chg_pct"):
+                if col in out.columns:
+                    out.loc[rolled, col] = np.nan
+
     for tag in SPX_BUCKETS:
         oi_col = f"spx_{tag}_put_oi"
         if oi_col in out.columns:
@@ -713,7 +743,7 @@ def flow_table_to_string(flow_features: pd.DataFrame, *, tail_rows: int = 10) ->
     formatters.update({col: lambda value: str(int(value)) for col in price_cols})
     # exp 只显示月-日(CSV 中仍是完整日期)
     formatters.update({col: lambda value: str(value)[5:] for col in view.columns if col.endswith("_exp")})
-    return view.to_string(index=False, formatters=formatters)
+    return view.to_string(index=False, formatters=formatters, na_rep="")
 
 
 def merge_into_signal(vx_features: pd.DataFrame, *flow_tables: pd.DataFrame) -> pd.DataFrame:
@@ -835,7 +865,8 @@ def chain_totals_row(
 def update_daily_option_stats(history_path: str | Path, trading_days: list[dt.date], *, latest_row: dict | None = None) -> pd.DataFrame:
     """更新每日期权统计历史。
 
-    - latest_row: 最新交易日由期权链现算的一行(source=json)。给了就直接写入, 不再为那天下载 daily_options。
+    - latest_row: 最新交易日由期权链现算的一行(source=json)。给了就不再为那天下载 daily_options;
+      写入时只覆盖更旧的 json 行, 不覆盖那天已有的官方行。
     - 其余每一天: 历史里缺的、或之前由 json 临时写入的, 从 daily_options 下载官方数据(替换 json 行)。
       首次即整段回填; 已有的官方行(包括 trading_days 之外更早的)全部保留。
 
@@ -885,8 +916,9 @@ def update_daily_option_stats(history_path: str | Path, trading_days: list[dt.da
             if len(rows) >= DAILY_OPTION_STATS_SAVE_EVERY:
                 save()
     if latest_row is not None:
+        # 官方 daily_options 行更准(口径完整、有个股 EQ_P/C), json 只能覆盖更旧的 json 行
         same_day = hist[hist["Trade Date"] == latest_row["Trade Date"]] if not hist.empty else hist
-        if same_day.empty or _replaces(same_day.iloc[-1], latest_row):
+        if same_day.empty or (same_day.iloc[-1]["source"] != SOURCE_DAILY_OPTIONS and _replaces(same_day.iloc[-1], latest_row)):
             rows.append(latest_row)
     save()
     if failed:

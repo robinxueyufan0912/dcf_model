@@ -26,6 +26,7 @@ from market_time import (
     los_angeles_now,
     los_angeles_today,
     snapshot_session_date,
+    snapshot_trade_date,
     to_los_angeles_time,
 )
 from vix_options_flow import (
@@ -45,6 +46,7 @@ from vix_options_flow import (
     spx_spot,
     update_daily_option_stats,
     vix_daily_snapshot,
+    with_retries,
 )
 
 pd.set_option("display.max_rows", None)
@@ -121,8 +123,24 @@ MARKET_HOLIDAYS: frozenset[dt.date] = frozenset(
         "2026-09-07",
         "2026-11-26",
         "2026-12-25",
+        "2027-01-01",
+        "2027-01-18",
+        "2027-02-15",
+        "2027-03-26",  # Good Friday
+        "2027-05-31",
+        "2027-06-18",  # Juneteenth (observed)
+        "2027-07-05",  # Independence Day (observed)
+        "2027-09-06",
+        "2027-11-25",
+        "2027-12-24",  # Christmas Day (observed)
     ]
 )
+LAST_HOLIDAY_YEAR = max(d.year for d in MARKET_HOLIDAYS)
+
+# CFE publishes one daily-history CSV per monthly VX contract, named by its final settlement date.
+VX_CONTRACT_CSV_URL = "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_{fsd}.csv"
+VX_FIRST_CONTRACT_MONTH = (2024, 1)
+VX_LEGACY_CONTRACT_CSVS = {"CFE_VX_V1_2021": VX_CONTRACT_CSV_URL.format(fsd="2021-10-20")}
 
 
 def _make_ssl_context(verify_ssl: bool = True, cafile: str | None = None) -> ssl.SSLContext:
@@ -140,8 +158,12 @@ def _make_ssl_context(verify_ssl: bool = True, cafile: str | None = None) -> ssl
 
 def _url_download(url: str, context: ssl.SSLContext, *, timeout: int = 60) -> bytes:
     req = urllib.request.Request(url, headers=_REQUEST_HEADERS)
-    with urllib.request.urlopen(req, context=context, timeout=timeout) as resp:
-        return resp.read()
+
+    def download() -> bytes:
+        with urllib.request.urlopen(req, context=context, timeout=timeout) as resp:
+            return resp.read()
+
+    return with_retries(download)
 
 
 def vx_contract_month_from_name(name: str) -> tuple[int, int] | None:
@@ -229,10 +251,11 @@ def build_vx_monthly_schedule(start_date: dt.date, end_date: dt.date, holidays: 
 def vx1_contract_month_for_date(d: dt.date, schedule: list[dict]) -> str:
     """
     给定日期 d，返回该日期对应的 VX1 合约月份（YYYY-MM）。
-    逻辑：找 fsd >= d 的最小那一个合约月份。
+    逻辑：找 fsd > d 的最小那一个合约月份。结算日当天到期合约早上即停止交易(当天只有几百手),
+    所以那天的 VX1 已经是下一个合约(与 vix_options_flow.link_to_vx 一致)。
     """
     for item in schedule:
-        if item["fsd"] >= d:
+        if item["fsd"] > d:
             return item["contract_month"]
     raise ValueError(f"No VX1 found for date={d}; schedule range too small.")
 
@@ -240,11 +263,11 @@ def vx1_contract_month_for_date(d: dt.date, schedule: list[dict]) -> str:
 def vx2_contract_month_for_date(d: dt.date, schedule: list[dict]) -> str:
     """
     给定日期 d，返回下一个月的 VX 合约月份（YYYY-MM）。
-    逻辑：找 fsd >= d 的第二个合约月份。
+    逻辑：找 fsd > d 的第二个合约月份(结算日当天同 VX1 的处理)。
     """
     found = 0
     for item in schedule:
-        if item["fsd"] >= d:
+        if item["fsd"] > d:
             found += 1
             if found == 2:
                 return item["contract_month"]
@@ -318,6 +341,18 @@ def vx_expiry_table(x: dt.date, n_months_back: int, holidays: set[dt.date] | Non
     return rows
 
 
+def vx_contract_csv_urls(end_date: dt.date, holidays: set[dt.date] | frozenset[dt.date], *, months_ahead: int = 3) -> dict[str, str]:
+    """CFE daily-history CSV URL per monthly VX contract, from VX_FIRST_CONTRACT_MONTH through
+    `months_ahead` months past end_date (enough for VX1 and VX2), keyed like 'CFE_VX_V6_2026'."""
+    urls = dict(VX_LEGACY_CONTRACT_CSVS)
+    y, m = VX_FIRST_CONTRACT_MONTH
+    last = add_months(end_date.year, end_date.month, months_ahead)
+    while (y, m) <= last:
+        urls[f"CFE_VX_{MONTH_CODE[m]}{y % 10}_{y}"] = VX_CONTRACT_CSV_URL.format(fsd=vix_monthly_final_settlement(y, m, holidays).isoformat())
+        y, m = add_months(y, m, 1)
+    return urls
+
+
 def load_vx_csvs(data_dir: str | Path) -> pd.DataFrame:
     """Load all VX CSVs under data_dir into a single DataFrame."""
     data_dir = Path(data_dir)
@@ -349,8 +384,8 @@ def download_cboe_vx_csvs(
     Skips contracts that already settled (their CSV is immutable) and files
     that already contain the latest completed session (US West Coast clock).
     A file downloaded earlier the same day, before that session settled, is
-    downloaded again. On download failure, keeps the existing local file so
-    the report can still run on cached data.
+    downloaded again. A failed download is reported and skipped (the existing
+    local file, if any, is kept), so the report still runs on cached data.
     """
     if data_dir is None:
         data_dir = Path(__file__).resolve().parent / "data"
@@ -369,10 +404,9 @@ def download_cboe_vx_csvs(
         try:
             payload = _url_download(url, context)
         except Exception as exc:
-            if out_path.exists():
-                print(f"[vx csv] {name} download failed ({exc}); keeping existing file", file=sys.stderr)
-                continue
-            raise
+            kept = "keeping existing file" if out_path.exists() else "no local copy yet (contract may not be listed)"
+            print(f"[vx csv] {name} download failed ({exc}); {kept}", file=sys.stderr)
+            continue
         out_path.write_bytes(payload)
         saved_paths.append(out_path)
         time.sleep(DOWNLOAD_REQUEST_DELAY)
@@ -419,9 +453,7 @@ def download_cboe_index_latest_quotes(index_names: list[str], *, verify_ssl: boo
         symbol = index_name.upper()
         url = CBOE_INDEX_LATEST_QUOTE_URL.format(symbol=symbol)
         try:
-            req = urllib.request.Request(url, headers=_REQUEST_HEADERS)
-            with urllib.request.urlopen(req, context=context, timeout=15) as resp:
-                payload = json.load(resp)
+            payload = json.loads(_url_download(url, context, timeout=15))
             if isinstance(payload, dict):
                 quotes[symbol] = payload
         except (OSError, ValueError) as exc:
@@ -770,7 +802,9 @@ def run_options_flow_snapshots(
     if spx_fetched is not None:
         spx_chain, spx_source_ts, spx_meta = spx_fetched
         spx_hist, saved_sessions["SPX"], _ = spx_daily_snapshot(spx_history_path, holidays=holidays, fetched=spx_fetched)
-        implied_move_asof = spx_source_ts.date() if spx_source_ts is not None else end_date
+        # Count from the session the chain belongs to: a pre-market chain holds yesterday's close,
+        # so today's expiry (the next session's move) must stay in the table.
+        implied_move_asof = snapshot_trade_date(spx_source_ts, holidays)[0] if spx_source_ts is not None else end_date
         spx_implied_moves = spx_daily_implied_moves(spx_chain, spx_spot(spx_meta), implied_move_asof)
     else:
         print("[spx snapshot] no chain this run; showing saved history")
@@ -859,6 +893,8 @@ def run_daily_option_stats(holidays: set[dt.date] | frozenset[dt.date], data_dir
 
 def run_vx_eod_report(end_date: dt.date) -> None:
     holidays = set(MARKET_HOLIDAYS)
+    if end_date.year >= LAST_HOLIDAY_YEAR:
+        print(f"[warn] MARKET_HOLIDAYS ends in {LAST_HOLIDAY_YEAR}; add {LAST_HOLIDAY_YEAR + 1} US market holidays", file=sys.stderr)
 
     # ===== find the VX1 contract month for each trading day [start_date, end_date] =====
     start_date = dt.date(2021, 1, 1)
@@ -871,45 +907,7 @@ def run_vx_eod_report(end_date: dt.date) -> None:
     #     print(k, "->", vx1_by_date[k])
 
     # ===== download the latest VX futures HLOCV data =====
-    cboe_vx_futures_hlocv_data = {
-        "CFE_VX_V1_2021": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-10-20.csv",
-        "CFE_VX_F4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-01-17.csv",
-        "CFE_VX_G4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-02-14.csv",
-        "CFE_VX_H4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-03-20.csv",
-        "CFE_VX_J4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-04-17.csv",
-        "CFE_VX_K4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-05-22.csv",
-        "CFE_VX_M4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-06-18.csv",
-        "CFE_VX_N4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-07-17.csv",
-        "CFE_VX_Q4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-08-21.csv",
-        "CFE_VX_U4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-09-18.csv",
-        "CFE_VX_V4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-10-16.csv",
-        "CFE_VX_X4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-11-20.csv",
-        "CFE_VX_Z4_2024": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-12-18.csv",
-        "CFE_VX_F5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-01-22.csv",
-        "CFE_VX_G5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-02-19.csv",
-        "CFE_VX_H5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-03-18.csv",
-        "CFE_VX_J5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-04-16.csv",
-        "CFE_VX_K5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-05-21.csv",
-        "CFE_VX_M5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-06-18.csv",
-        "CFE_VX_N5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-07-16.csv",
-        "CFE_VX_Q5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-08-20.csv",
-        "CFE_VX_U5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-09-17.csv",
-        "CFE_VX_V5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-10-22.csv",
-        "CFE_VX_X5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-11-19.csv",
-        "CFE_VX_Z5_2025": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-12-17.csv",
-        "CFE_VX_F6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-01-21.csv",
-        "CFE_VX_G6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-02-18.csv",
-        "CFE_VX_H6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-03-18.csv",
-        "CFE_VX_J6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-04-15.csv",
-        "CFE_VX_K6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-05-19.csv",
-        "CFE_VX_M6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-06-17.csv",
-        "CFE_VX_N6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-07-22.csv",
-        "CFE_VX_Q6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-08-19.csv",
-        "CFE_VX_U6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-09-16.csv",
-        "CFE_VX_V6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-10-21.csv",
-        "CFE_VX_X6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-11-18.csv",
-        "CFE_VX_Z6_2026": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-12-16.csv",
-    }
+    cboe_vx_futures_hlocv_data = vx_contract_csv_urls(end_date, holidays)
     root_dir = Path(__file__).resolve().parent
     data_dir = root_dir / "data"
     index_data_dir = data_dir / "indices"
